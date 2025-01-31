@@ -2,6 +2,8 @@ import express from "express";
 import http from "node:http";
 import path from "node:path";
 
+import db from "./db_conn.js";
+
 const app = express();
 const server = http.createServer(app);
 
