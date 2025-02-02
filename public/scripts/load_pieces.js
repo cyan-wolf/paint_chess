@@ -4,7 +4,9 @@ function loadPieces() {
         const pieceName = elem.classList[1];
         const color = elem.classList[2];
 
-        elem.innerHTML = genSvgPiece(pieceName, color, 70);
+        const svgSize = 70;
+
+        elem.innerHTML = genSvgPiece(pieceName, color, svgSize);
     }
 }
 

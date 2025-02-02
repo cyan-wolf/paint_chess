@@ -23,6 +23,10 @@ app.get('/find-game', (req, res) => {
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
 
+app.get('/testing', (req, res) => {
+    res.sendFile(path.join(__dirname, "client/testing.html"));
+});
+
 const port = process.env.PORT || 3000;
 
 server.listen(port, () => {

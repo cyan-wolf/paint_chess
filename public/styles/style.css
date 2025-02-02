@@ -1,0 +1,17 @@
+
+.board {
+    display: grid;
+    width: min-content;
+    grid-template-columns: repeat(8, 1fr);
+    background-color: black;
+    margin: 0;
+}
+
+.slot {
+    width: 70px;
+    height: 70px;
+}
+
+.piece {
+    display: block;
+}
