@@ -14,8 +14,9 @@
     <script>
         const mainBoard = document.getElementById("main-board");
 
-        initBoard(mainBoard);
-        updateBoard(mainBoard, genSampleBoardDesc());
+        const boardPositons = initBoard(mainBoard, false);
+
+        updateBoard(boardPositons, genInitialChessBoardDesc());
     </script>
 </body>
 </html>
