@@ -12,11 +12,10 @@
     <script src="public/scripts/load_pieces.js"></script>
     <script src="public/scripts/board.js"></script>
     <script>
-        const mainBoard = document.getElementById("main-board");
+        const mainBoardElem = document.getElementById("main-board");
 
-        const boardPositons = initBoard(mainBoard, false);
-
-        updateBoard(boardPositons, genInitialChessBoardDesc());
+        const board = new Board(mainBoardElem, false);
+        board.update(genInitialChessBoardDesc());
     </script>
 </body>
 </html>

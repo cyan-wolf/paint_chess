@@ -1,4 +1,73 @@
 
+class Board {
+    // Initializes the given board after being given 
+    // an element to fill in with slots.
+    constructor(boardElem, isFlipped) {
+        this.boardElem = boardElem;
+        this.boardPositions = {};
+
+        if (!isFlipped) {
+            for (let index = 0; index < 8 * 8; index++) {
+                this.fillSlot(index);
+            }
+        }
+        else {
+            for (let index = 8 * 8 - 1; index >= 0; index--) {
+                this.fillSlot(index);
+            }
+        }
+    }
+
+    // Fills in a board slot at the specified index.
+    // Fills in the board element and the board positions object.
+    fillSlot(index) {
+        const slot = document.createElement("div");
+        slot.classList.add("slot");
+
+        // Calculate the row and column using the index.
+        const row = Math.floor(index / 8);
+        const col = index % 8;
+
+        // Create the checkerboard pattern.
+        if (row % 2 == 0 && col % 2 == 0 || row % 2 == 1 && col % 2 == 1) {
+            slot.style.backgroundColor = "white";
+        } else {
+            slot.style.backgroundColor = "black";
+        }
+
+        // Fill in the `boardPositions` object for easy access to the board 
+        // using standard chess coordinates.
+        const chessCoord = rowColToChessCoord([row, col]);
+        this.boardPositions[chessCoord] = slot;
+
+        // TODO: Use sockets to let the server know that this coordinate 
+        // was clicked.
+        slot.addEventListener("click", () => {
+            // Placeholder.
+            console.log(chessCoord);
+        });
+
+        // Span used for rendering pieces.
+        const pieceSpan = document.createElement("span");
+        slot.appendChild(pieceSpan);
+
+        this.boardElem.appendChild(slot);
+    }
+
+    // Updates the board using a board description object.
+    // * The board positons object maps chess coordinates to actual slots on the board.
+    // * The board description object maps chess coordinates to a physical (type/color) 
+    //   description of the piece that should be at that position.
+    update(boardDesc) {
+        for (const coord of Object.keys(boardDesc)) {
+            const pieceElem = this.boardPositions[coord].children[0];
+            const { piece, color } = boardDesc[coord];
+
+            pieceElem.classList = `piece ${piece} ${color}`;
+        }
+    }
+}
+
 // Converts a chess coordinate string into a row/column pair.
 function chessCoordToRowCol(chessCoord) {
     const [file, rank] = chessCoord;
@@ -17,61 +86,6 @@ function rowColToChessCoord(pos) {
     const rank = 8 - row;
 
     return `${file}${rank}`;
-}
-
-// Fills in a board slot at the specified index.
-// Fills in the `boardPositions` object.
-function fillBoardSlot(boardElem, index, boardPositions) {
-    const slot = document.createElement("div");
-    slot.classList.add("slot");
-
-    // Calculate the row and column using the index.
-    const row = Math.floor(index / 8);
-    const col = index % 8;
-
-    // Create the checkerboard pattern.
-    if (row % 2 == 0 && col % 2 == 0 || row % 2 == 1 && col % 2 == 1) {
-        slot.style.backgroundColor = "white";
-    } else {
-        slot.style.backgroundColor = "black";
-    }
-
-    // Fill in the `boardPositions` object for easy access to the board 
-    // using standard chess coordinates.
-    const chessCoord = rowColToChessCoord([row, col]);
-    boardPositions[chessCoord] = slot;
-
-    // TODO: Use sockets to let the server know that this coordinate 
-    // was clicked.
-    slot.addEventListener("click", () => {
-        // Placeholder.
-        console.log(chessCoord);
-    });
-
-    // Span used for rendering pieces.
-    const pieceSpan = document.createElement("span");
-    slot.appendChild(pieceSpan);
-
-    boardElem.appendChild(slot);
-}
-
-// Initializes the given board element.
-// Returns an object that provides easy access to the 
-// board's slots using standard chess coordinates.
-function initBoard(boardElem, isFlipped) {
-    const boardPositions = {};
-
-    if (!isFlipped) {
-        for (let index = 0; index < 8 * 8; index++) {
-            fillBoardSlot(boardElem, index, boardPositions);
-        }
-    }
-    else {
-        for (let index = 8 * 8 - 1; index >= 0; index--) {
-            fillBoardSlot(boardElem, index, boardPositions);
-        }
-    }
-    return boardPositions;
 }
 
 // Generates a sample initial board description object.
@@ -164,17 +178,4 @@ function genInitialChessBoardDesc() {
     }
 
     return boardDesc;
-}
-
-// Uses `boardPositions` to update the board with `boardDesc`.
-// * The board positons object maps chess coordinates to actual slots on the board.
-// * The board description object maps chess coordinates to a physical (type/color) 
-//   description of the piece that should be at that position.
-function updateBoard(boardPositions, boardDesc) {
-    for (const coord of Object.keys(boardDesc)) {
-        const pieceElem = boardPositions[coord].children[0];
-        const { piece, color } = boardDesc[coord];
-
-        pieceElem.classList = `piece ${piece} ${color}`;
-    }
 }
