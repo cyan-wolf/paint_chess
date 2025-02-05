@@ -2,9 +2,12 @@
 class Board {
     // Initializes the given board after being given 
     // an element to fill in with slots.
-    constructor(boardElem, isFlipped) {
-        this.boardElem = boardElem;
+    constructor(boardConfig) {
+        const { element, isFlipped, colorConfig } = boardConfig;
+
+        this.boardElem = element;
         this.boardPositions = {};
+        this.colorConfig = colorConfig;
 
         if (!isFlipped) {
             for (let index = 0; index < 8 * 8; index++) {
@@ -61,7 +64,9 @@ class Board {
     update(boardDesc) {
         for (const coord of Object.keys(boardDesc)) {
             const pieceElem = this.boardPositions[coord].children[0];
-            const { piece, color } = boardDesc[coord];
+            const { piece, player } = boardDesc[coord];
+
+            const color = this.colorConfig[player]["piece"];
 
             pieceElem.classList = `piece ${piece} ${color}`;
         }
@@ -94,70 +99,70 @@ function genInitialChessBoardDesc() {
         // First player's side.
         "a1": {
             piece: "rook",
-            color: "red",
+            player: "p1",
         },
         "b1": {
             piece: "knight",
-            color: "red",
+            player: "p1",
         },
         "c1": {
             piece: "bishop",
-            color: "red",
+            player: "p1",
         },
         "d1": {
             piece: "queen",
-            color: "red",
+            player: "p1",
         },
         "e1": {
             piece: "king",
-            color: "red",
+            player: "p1",
         },
         "f1": {
             piece: "bishop",
-            color: "red",
+            player: "p1",
         },
         "g1": {
             piece: "knight",
-            color: "red",
+            player: "p1",
         },
         "h1": {
             piece: "rook",
-            color: "red",
+            player: "p1",
         },
 
         // Second player's side.
 
         "a8": {
             piece: "rook",
-            color: "blue",
+            player: "p2",
         },
         "b8": {
             piece: "knight",
-            color: "blue",
+            player: "p2",
         },
         "c8": {
             piece: "bishop",
-            color: "blue",
+            player: "p2",
         },
         "d8": {
             piece: "queen",
-            color: "blue",
+            player: "p2",
         },
         "e8": {
             piece: "king",
-            color: "blue",
+            player: "p2",
         },
         "f8": {
             piece: "bishop",
-            color: "blue",
+            player: "p2",
         },
         "g8": {
             piece: "knight",
-            color: "blue",
+            player: "p2",
         },
         "h8": {
             piece: "rook",
-            color: "blue",
+            player: "p2",
         },
     };
 
@@ -168,12 +173,12 @@ function genInitialChessBoardDesc() {
 
         boardDesc[player1PawnCoord] = {
             piece: "pawn",
-            color: "red",
+            player: "p1",
         };
 
         boardDesc[player2PawnCoord] = {
             piece: "pawn",
-            color: "blue",
+            player: "p2",
         };
     }
 

@@ -14,7 +14,26 @@
     <script>
         const mainBoardElem = document.getElementById("main-board");
 
-        const board = new Board(mainBoardElem, false);
+        // TODO: All this information (besides element), is supposed
+        // to come from the server.
+        const board = new Board({
+            element: mainBoardElem,
+            isFlipped: false,
+            colorConfig: {
+                p1: {
+                    piece: "red",
+                    bgLight: "#ffa99c",
+                    bgDark: "#61241f",
+                },
+                p2: {
+                    piece: "blue",
+                    bgLight: "#9ca4ff",
+                    bgDark: "#1f1f61",
+                },
+            },
+        });
+
+        // TODO: The board descriptions are supposed to come from the server.
         board.update(genInitialChessBoardDesc());
     </script>
 </body>
