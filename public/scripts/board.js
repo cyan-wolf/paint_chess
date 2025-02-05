@@ -32,7 +32,7 @@ class Board {
         const col = index % 8;
 
         // Create the checkerboard pattern.
-        if (row % 2 == 0 && col % 2 == 0 || row % 2 == 1 && col % 2 == 1) {
+        if (posShouldBeLight([row, col])) {
             slot.style.backgroundColor = "white";
         } else {
             slot.style.backgroundColor = "black";
@@ -57,11 +57,36 @@ class Board {
         this.boardElem.appendChild(slot);
     }
 
+    // Clears the board.
+    clear() {
+        for (let index = 0; index < 8 * 8; index++) {
+            // Calculate the row and column using the index.
+            const row = Math.floor(index / 8);
+            const col = index % 8;
+
+            const slotElem = this.boardElem.children[index];
+
+            // Reset the checkerboard pattern.
+            if (posShouldBeLight([row, col])) {
+                slotElem.style.backgroundColor = "white";
+            } else {
+                slotElem.style.backgroundColor = "black";
+            }
+
+            // Clear piece style.
+            const pieceElem = slotElem.children[0];
+            pieceElem.classList = "";
+        }
+    }
+
     // Updates the board using a board description object.
     // * The board positons object maps chess coordinates to actual slots on the board.
     // * The board description object maps chess coordinates to a physical (type/color) 
     //   description of the piece that should be at that position.
     update(boardDesc) {
+        // Clear the board before updating it.
+        this.clear();
+
         for (const coord of Object.keys(boardDesc)) {
             const slotElem = this.boardPositions[coord];
             const pieceElem = slotElem.children[0];
@@ -103,9 +128,15 @@ function rowColToChessCoord(pos) {
     return `${file}${rank}`;
 }
 
-function slotAtCoordShouldBeLight(chessCoord) {
-    const [row, col] = chessCoordToRowCol(chessCoord);
+// Returns true if the slot at the given square should be light.
+function posShouldBeLight(pos) {
+    const [row, col] = pos;
     return row % 2 == 0 && col % 2 == 0 || row % 2 == 1 && col % 2 == 1;
+}
+
+// Same as `posShouldBeLight`, but for chess coordinates.
+function slotAtCoordShouldBeLight(chessCoord) {
+    return posShouldBeLight(chessCoordToRowCol(chessCoord));
 }
 
 // Generates a sample initial board description object.
