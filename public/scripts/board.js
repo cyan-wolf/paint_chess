@@ -63,12 +63,22 @@ class Board {
     //   description of the piece that should be at that position.
     update(boardDesc) {
         for (const coord of Object.keys(boardDesc)) {
-            const pieceElem = this.boardPositions[coord].children[0];
-            const { piece, player } = boardDesc[coord];
+            const slotElem = this.boardPositions[coord];
+            const pieceElem = slotElem.children[0];
 
-            const color = this.colorConfig[player]["piece"];
+            const { piece, player, turf } = boardDesc[coord];
+            
+            const turfColor = slotAtCoordShouldBeLight(coord) ? 
+                this.colorConfig[turf]["bgLight"] 
+                : 
+                this.colorConfig[turf]["bgDark"];
 
-            pieceElem.classList = `piece ${piece} ${color}`;
+            slotElem.style.backgroundColor = turfColor;
+
+            if (piece !== undefined) {
+                const pieceColor = this.colorConfig[player]["piece"];
+                pieceElem.classList = `piece ${piece} ${pieceColor}`;
+            }
         }
     }
 }
@@ -93,6 +103,11 @@ function rowColToChessCoord(pos) {
     return `${file}${rank}`;
 }
 
+function slotAtCoordShouldBeLight(chessCoord) {
+    const [row, col] = chessCoordToRowCol(chessCoord);
+    return row % 2 == 0 && col % 2 == 0 || row % 2 == 1 && col % 2 == 1;
+}
+
 // Generates a sample initial board description object.
 function genInitialChessBoardDesc() {
     const boardDesc = {
@@ -100,69 +115,83 @@ function genInitialChessBoardDesc() {
         "a1": {
             piece: "rook",
             player: "p1",
+            turf: "p1",
         },
         "b1": {
             piece: "knight",
             player: "p1",
+            turf: "p1",
         },
         "c1": {
             piece: "bishop",
             player: "p1",
+            turf: "p1",
         },
         "d1": {
             piece: "queen",
             player: "p1",
+            turf: "p1",
         },
         "e1": {
             piece: "king",
             player: "p1",
+            turf: "p1",
         },
         "f1": {
             piece: "bishop",
             player: "p1",
+            turf: "p1",
         },
         "g1": {
             piece: "knight",
             player: "p1",
+            turf: "p1",
         },
         "h1": {
             piece: "rook",
             player: "p1",
+            turf: "p1",
         },
-
         // Second player's side.
-
         "a8": {
             piece: "rook",
             player: "p2",
+            turf: "p2",
         },
         "b8": {
             piece: "knight",
             player: "p2",
+            turf: "p2",
         },
         "c8": {
             piece: "bishop",
             player: "p2",
+            turf: "p2",
         },
         "d8": {
             piece: "queen",
             player: "p2",
+            turf: "p2",
         },
         "e8": {
             piece: "king",
             player: "p2",
+            turf: "p2",
         },
         "f8": {
             piece: "bishop",
             player: "p2",
+            turf: "p2",
         },
         "g8": {
             piece: "knight",
             player: "p2",
+            turf: "p2",
         },
         "h8": {
             piece: "rook",
             player: "p2",
+            turf: "p2",
         },
     };
 
@@ -174,11 +203,13 @@ function genInitialChessBoardDesc() {
         boardDesc[player1PawnCoord] = {
             piece: "pawn",
             player: "p1",
+            turf: "p1",
         };
 
         boardDesc[player2PawnCoord] = {
             piece: "pawn",
             player: "p2",
+            turf: "p2",
         };
     }
 
