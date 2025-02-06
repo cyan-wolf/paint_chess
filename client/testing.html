@@ -14,11 +14,12 @@
     <script>
         const mainBoardElem = document.getElementById("main-board");
 
-        // TODO: All this information (besides element), is supposed
+        // TODO: All this information (besides element and clickable), is supposed
         // to come from the server.
         const board = new Board({
             element: mainBoardElem,
             isFlipped: false,
+            clickable: true,
             colorConfig: {
                 p1: {
                     piece: "red",
@@ -35,6 +36,12 @@
 
         // TODO: The board descriptions are supposed to come from the server.
         board.update(genInitialChessBoardDesc());
+
+        // TODO: Use sockets to let the server know that this coordinate 
+        // was clicked.
+        board.addOnMoveEventHandler((move) => {
+            console.log(move);
+        });
     </script>
 </body>
 </html>

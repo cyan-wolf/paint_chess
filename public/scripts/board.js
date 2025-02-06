@@ -3,11 +3,16 @@ class Board {
     // Initializes the given board after being given 
     // an element to fill in with slots.
     constructor(boardConfig) {
-        const { element, isFlipped, colorConfig } = boardConfig;
+        const { element, isFlipped, clickable, colorConfig } = boardConfig;
 
         this.boardElem = element;
         this.boardPositions = {};
         this.colorConfig = colorConfig;
+
+        // Properties for handling user clicks.
+        this.clickable = clickable;
+        this.lastClickedCoord = null;
+        this.onMoveDelegates = [];
 
         if (!isFlipped) {
             for (let index = 0; index < 8 * 8; index++) {
@@ -43,11 +48,30 @@ class Board {
         const chessCoord = rowColToChessCoord([row, col]);
         this.boardPositions[chessCoord] = slot;
 
-        // TODO: Use sockets to let the server know that this coordinate 
-        // was clicked.
+        // Handles click events.
         slot.addEventListener("click", () => {
-            // Placeholder.
-            console.log(chessCoord);
+            if (!this.clickable) {
+                return;
+            }
+
+            // Remember the coordinate of the last clicked slot.
+            if (this.lastClickedCoord === null) {
+                this.lastClickedCoord = chessCoord;
+                return;
+            }
+
+            // If a coordinate was already clicked, then 
+            // call all the `onMove` event handlers with the 
+            // moved performed by the player.
+            for (const onMove of this.onMoveDelegates) {
+                onMove({
+                    from: this.lastClickedCoord,
+                    to: chessCoord,
+                });
+
+                // Reset the last clicked coord.
+                this.lastClickedCoord = null;
+            }
         });
 
         // Span used for rendering pieces.
@@ -105,6 +129,20 @@ class Board {
                 pieceElem.classList = `piece ${piece} ${pieceColor}`;
             }
         }
+    }
+
+    // Connets an event hander that processes a move performed by the 
+    // player on the board.
+    addOnMoveEventHandler(onMoveDelegate) {
+        this.onMoveDelegates.push(onMoveDelegate);
+    }
+
+    // Checks whether a coordinate has a piece.
+    hasPieceAtCoord(chessCoord) {
+        const slotElem = this.boardPositions[chessCoord];
+        const slotContents = slotElem.children[0];
+
+        return slotContents.classList.contains("piece");
     }
 }
 
