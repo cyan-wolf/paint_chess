@@ -7,6 +7,22 @@
 </head>
 <body>
     <h1>Find Game</h1>
-    <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Deleniti libero doloribus quibusdam dolorem quidem illo ipsa dicta mollitia voluptas architecto doloremque vero, dolore exercitationem accusamus commodi, accusantium in quas adipisci!</p>
+    <button id="queue-btn">Queue Game</button>
+
+    <h1>Current Games</h1>
+    <!-- The games should probably be loaded-in using sockets. -->
+    <p>There are no current games...</p>
 </body>
+<script>
+    // TODO: This lets the server know that a game needs to be queued.
+    // This might be replaced by sockets.
+    document.getElementById("queue-btn").addEventListener("click", (e) => {
+        fetch("/find-game", {
+            method: "POST",
+            body: JSON.stringify({}),
+        }).catch((reason) => {
+            console.error(reason);
+        });
+    });
+</script>
 </html>
