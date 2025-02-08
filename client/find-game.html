@@ -11,18 +11,37 @@
 
     <h1>Current Games</h1>
     <!-- The games should probably be loaded-in using sockets. -->
-    <p>There are no current games...</p>
+    <div id="game-queue">There are no current games...</div>
 </body>
+<script src="/socket.io/socket.io.js"></script>
 <script>
+    const socket = io();
+
     // TODO: This lets the server know that a game needs to be queued.
     // This might be replaced by sockets.
     document.getElementById("queue-btn").addEventListener("click", (e) => {
-        fetch("/find-game", {
-            method: "POST",
-            body: JSON.stringify({}),
-        }).catch((reason) => {
-            console.error(reason);
-        });
+        socket.emit("queue-game", {});
+    });
+
+    socket.on("game-queue-updated", (gameQueue) => {
+        const gameQueueElem = document.getElementById("game-queue");
+        gameQueueElem.innerHTML = "";
+
+        for (const gameId of Object.keys(gameQueue)) {
+            const gameJoinButton = document.createElement("button");
+
+            gameJoinButton.innerHTML = `Join game (${gameQueue[gameId].waitingPlayers.length}/2) [${gameId}]`;
+
+            gameJoinButton.addEventListener("click", (e) => {
+                socket.emit("join-game-request", { gameId });
+            });
+
+            gameQueueElem.appendChild(gameJoinButton);
+        }
+    });
+
+    socket.on("found-game", (game) => {
+        console.log(game);
     });
 </script>
 </html>

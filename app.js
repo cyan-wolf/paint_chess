@@ -2,6 +2,7 @@ import express from "express";
 import http from "node:http";
 import path from "node:path";
 import session from "express-session";
+import { Server } from "socket.io";
 
 // Load configuration environment variables.
 import dotenv from "dotenv";
@@ -11,6 +12,7 @@ import db from "./db_conn.js";
 
 const app = express();
 const server = http.createServer(app);
+const io = new Server(server);
 
 const __dirname = import.meta.dirname;
 
@@ -21,11 +23,19 @@ app.use('/public', express.static(path.join(__dirname, "public")));
 app.use(express.urlencoded({ extended: true }));
 
 // Used for sessions.
-app.use(session({
+const sessionMiddleware = session({
     secret: process.env.EXPRESS_SECRET,
     resave: false,
     saveUninitialized: false,
-}));
+});
+
+// Makes sessions accessible from route handlers.
+app.use(sessionMiddleware);
+
+// Makes sessions accessible from socket event handlers.
+io.engine.use(sessionMiddleware);
+
+// Setup routes.
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, "client/index.html"));
@@ -98,8 +108,76 @@ app.post('/find-game', (req, res) => {
     console.log(`queued game from ${req.session.user.username}`);
 });
 
+app.get("/game:id", (req, res) => {
+    // TODO: game logic
+});
+
 app.get('/testing', (req, res) => {
     res.sendFile(path.join(__dirname, "client/testing.html"));
+});
+
+// Placeholder way of storing game data.
+const queuedGamesDb = {};
+const activeGamesDb = {};
+
+// Setup sockets.
+io.on("connection", (socket) => {
+    const session = socket.request.session;
+
+    if (!session.user) {
+        return; // ignore events from this socket
+    }
+
+    const username = session.user.username;
+    // For sending events using only the username.
+    socket.join(`user-${username}`);
+
+    socket.on("queue-game", (game_settings) => {
+        const gameId = genId();
+        queuedGamesDb[gameId] = {
+            waitingPlayers: [],
+        };
+
+        io.emit("game-queue-updated", queuedGamesDb);
+    });
+
+    socket.on("join-game-request", ({ gameId }) => {
+        if (!Object.hasOwn(queuedGamesDb, gameId)) {
+            return; // ignore event if game ID is invalid
+        }
+        const game = queuedGamesDb[gameId];
+        
+        if (game.waitingPlayers.includes(username)) {
+            return; // avoid duplicate users in the same game
+        }
+        game.waitingPlayers.push(username);
+        socket.join(`game-${gameId}`);
+
+        if (game.waitingPlayers.length == 2) {
+            // Remove game from queue.
+            delete queuedGamesDb[gameId];
+
+            // Joining game logic
+            const [p1, p2] = game.waitingPlayers;
+
+            console.log(`players ${p1} and ${p2} are about to join game ${gameId}`);
+
+            const gameInfo = {
+                p1, p2
+            };
+
+            activeGamesDb[gameId] = gameInfo;
+            
+            // TODO: redirect the each user to /game/:id.
+            // this can be done on the client with the handler for the
+            // "found-game" event below.
+            io.to(`game-${gameId}`).emit("found-game", gameInfo);
+        }
+        
+        io.emit("game-queue-updated", queuedGamesDb);
+
+        //console.log(`user ${session.user.username} wants to join game ${gameId}`);
+    });
 });
 
 const port = process.env.PORT || 3000;
