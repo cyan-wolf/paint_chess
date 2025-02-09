@@ -4,8 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Chess | Game</title>
+    <link rel="stylesheet" href="/public/styles/style.css">
 </head>
 <body>
-    <h1>Playing Game...</h1>
+    <div class="board" id="main-board"></div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/public/scripts/load_pieces.js"></script>
+    <script src="/public/scripts/board.js"></script>
+    <script>
+        const globals = {
+            board: null,
+        };
+
+        const socket = io()
+        socket.emit("ready-to-start-game");
+
+        socket.on("game-start", (gameData) => {
+            const boardConfig = {
+                element: document.getElementById("main-board"),
+                clickable: true,
+                ...gameData.boardConfig
+            };
+
+            globals.board = new Board(boardConfig);
+            globals.board.update(gameData.boardDesc);
+
+            // Load piece SVGs.
+            loadPieces();
+
+            // Use sockets to let the server know that this coordinate was clicked.
+            globals.board.addOnMoveEventHandler((move) => {
+                console.log(move);
+
+                socket.emit("perform-move", move);
+            });
+        });
+    </script>
 </body>
 </html>

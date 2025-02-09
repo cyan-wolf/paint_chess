@@ -1,4 +1,5 @@
 
+// Client-side board class.
 class Board {
     // Initializes the given board after being given 
     // an element to fill in with slots.

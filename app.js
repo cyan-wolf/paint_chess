@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 dotenv.config();
 
+import { Game } from "./game.js";
 import db from "./db_conn.js";
 
 const app = express();
@@ -93,7 +94,6 @@ app.get('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
     }
-    console.log(req.session.user);
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
 
@@ -103,22 +103,42 @@ app.post('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
     }
-
-    // Placeholder.
-    console.log(`queued game from ${req.session.user.username}`);
 });
 
-app.get("/game:id", (req, res) => {
-    // TODO: game logic
+// Placeholder way of storing game data.
+const queuedGamesDb = {};
+const activeGamesDb = {};
+const activePlayers = {};
+
+app.get("/game/:id", (req, res) => {
+    const gameId = req.params.id;
+
+    // User must be logged in.
+    if (!req.session.user) {
+        res.redirect("/login");        
+        return;
+    }
+    const username = req.session.user.username;
+
+    // Game ID must be valid.
+    if (!Object.hasOwn(activeGamesDb, gameId)) {
+        res.status(400).send("Invalid Game ID");
+        return;
+    }
+    const game = activeGamesDb[gameId];
+
+    // User must be a player in the game.
+    if (!game.hasUser(username)) {
+        res.status(400).send("User is not playing this game");
+    }
+
+    res.sendFile(path.join(__dirname, "client/game.html"));
 });
 
 app.get('/testing', (req, res) => {
     res.sendFile(path.join(__dirname, "client/testing.html"));
 });
 
-// Placeholder way of storing game data.
-const queuedGamesDb = {};
-const activeGamesDb = {};
 
 // Setup sockets.
 io.on("connection", (socket) => {
@@ -145,38 +165,77 @@ io.on("connection", (socket) => {
         if (!Object.hasOwn(queuedGamesDb, gameId)) {
             return; // ignore event if game ID is invalid
         }
-        const game = queuedGamesDb[gameId];
+        const queuedGame = queuedGamesDb[gameId];
         
-        if (game.waitingPlayers.includes(username)) {
+        if (queuedGame.waitingPlayers.includes(username)) {
             return; // avoid duplicate users in the same game
         }
-        game.waitingPlayers.push(username);
+        queuedGame.waitingPlayers.push(username);
         socket.join(`game-${gameId}`);
 
-        if (game.waitingPlayers.length == 2) {
+        if (queuedGame.waitingPlayers.length == 2) {
             // Remove game from queue.
             delete queuedGamesDb[gameId];
 
             // Joining game logic
-            const [p1, p2] = game.waitingPlayers;
+            const [p1, p2] = queuedGame.waitingPlayers;
 
-            console.log(`players ${p1} and ${p2} are about to join game ${gameId}`);
+            activePlayers[p1] = { gameId };
+            activePlayers[p2] = { gameId };
 
-            const gameInfo = {
-                p1, p2
-            };
+            //console.log(`players ${p1} and ${p2} are about to join game ${gameId}`);
 
-            activeGamesDb[gameId] = gameInfo;
+            const game = new Game({
+                p1, p2, gameId,
+                joinedPlayers: 0,
+            });
+            activeGamesDb[gameId] = game;
             
-            // TODO: redirect the each user to /game/:id.
-            // this can be done on the client with the handler for the
-            // "found-game" event below.
-            io.to(`game-${gameId}`).emit("found-game", gameInfo);
+            // Redirects the user to "/game/:id" on the client.
+            io.to(`game-${gameId}`).emit("found-game", { gameId });
         }
         
         io.emit("game-queue-updated", queuedGamesDb);
+    });
 
-        //console.log(`user ${session.user.username} wants to join game ${gameId}`);
+    socket.on("ready-to-start-game", () => {
+        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = activePlayers[username].gameId;
+        
+        // Re-join the user to the socket game room, as 
+        // the connection was reset when the page reloaded 
+        // when getting to "/game/:id".
+        socket.join(`game-${gameId}`);
+        socket.join(`user-${username}`);
+
+        const game = activeGamesDb[gameId];
+
+        // Increment the number of joined players.
+        game.joinPlayer();
+
+        if (game.getJoinedPlayerAmt() == 2) {
+            // Setup various parts of the game.
+            game.setup();
+
+            for (const usernameInGame of game.getUsers()) {
+                const gameData = game.asClientView(usernameInGame);
+                io.to(`user-${usernameInGame}`).emit("game-start", gameData);
+            }
+        }
+    });
+
+    socket.on("perform-move", (move) => {
+        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = activePlayers[username].gameId;
+        const game = activeGamesDb[gameId];
+
+        console.log(move);
     });
 });
 

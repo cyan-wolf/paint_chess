@@ -17,8 +17,7 @@
 <script>
     const socket = io();
 
-    // TODO: This lets the server know that a game needs to be queued.
-    // This might be replaced by sockets.
+    // This lets the server know that a game needs to be queued.
     document.getElementById("queue-btn").addEventListener("click", (e) => {
         socket.emit("queue-game", {});
     });
@@ -40,8 +39,8 @@
         }
     });
 
-    socket.on("found-game", (game) => {
-        console.log(game);
+    socket.on("found-game", ({ gameId }) => {
+        window.location = `/game/${gameId}`;
     });
 </script>
 </html>
