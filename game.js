@@ -27,7 +27,8 @@ export class Game {
     }
 
     setup() {
-        // TODO: choose a random color scheme
+        // Choose a random color scheme.
+        this.colorConfig = genRandomColorConfig();
     }
 
     asClientView(username) {
@@ -44,18 +45,7 @@ export class Game {
             gameId: this.meta.gameId,
             boardConfig: {
                 isFlipped,
-                colorConfig: {
-                    p1: {
-                        piece: "red",
-                        bgLight: "#ffa99c",
-                        bgDark: "#61241f",
-                    },
-                    p2: {
-                        piece: "blue",
-                        bgLight: "#9ca4ff",
-                        bgDark: "#1f1f61",
-                    },
-                },
+                colorConfig: this.colorConfig,
             },
             boardDesc: genInitialChessBoardDesc(),
         };
@@ -64,4 +54,49 @@ export class Game {
     }
 }
 
+function genRandomColorConfig() {
+    const configs = [
+        // Red and blue.
+        {
+            p1: {
+                piece: "red",
+                bgLight: "#ffa99c",
+                bgDark: "#61241f",
+            },
+            p2: {
+                piece: "blue",
+                bgLight: "#9ca4ff",
+                bgDark: "#1f1f61",
+            },
+        },
+        // Lime and purple.
+        {
+            p1: {
+                piece: "#43eb34",
+                bgLight: "#9cffa6",
+                bgDark: "#1f6126",
+            },
+            p2: {
+                piece: "#c634eb",
+                bgLight: "#e09cff",
+                bgDark: "#4a1f61",
+            },
+        },
+        // Orange and cyan.
+        {
+            p1: {
+                piece: "#ffaa00",
+                bgLight: "#fff29c",
+                bgDark: "#61481f",
+            },
+            p2: {
+                piece: "#00fff2",
+                bgLight: "#bffaff",
+                bgDark: "#1f5b61",
+            },
+        },
+    ];
 
+    // Pick a random config.
+    return configs[Math.floor(Math.random() * configs.length)];
+}
