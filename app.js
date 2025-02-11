@@ -246,6 +246,7 @@ io.on("connection", (socket) => {
             return;
         }
 
+        // Send the result of the move to the users in the game.
         for (const usernameInGame of game.getUsers()) {
             const gameData = game.asClientView(usernameInGame);
             io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);

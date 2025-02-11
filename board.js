@@ -30,12 +30,21 @@ export class Board {
             return { couldMove: false };
         }
 
-        // Placeholder: Accept any move for now.
-
         const newGrid = structuredClone(this.grid);
 
-        // TODO
-        newGrid[toPos[0]][toPos[1]] = newGrid[fromPos[0]][fromPos[1]];
+        const slotToMove = newGrid[fromPos[0]][fromPos[1]];
+
+        if (slotToMove.piece === null) {
+            // Player should only be able to move pieces.
+            return { couldMove: false };
+        }
+        else if (slotToMove.player !== player) {
+            // Player should only be able to move their own pieces.
+            return { couldMove: false };
+        }
+
+        // Placeholder: Accept any move for now.
+        newGrid[toPos[0]][toPos[1]] = slotToMove;
         newGrid[fromPos[0]][fromPos[1]] = newEmptySlot();
 
         this.grid = newGrid;
