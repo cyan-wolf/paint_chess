@@ -3,6 +3,7 @@
 export class Board {
     constructor() {
         this.grid = [];
+        this.turn = "p1";
 
         for (let r = 0; r < 8; r++) {
             const row = [];
@@ -42,13 +43,52 @@ export class Board {
             // Player should only be able to move their own pieces.
             return { couldMove: false };
         }
+        else if (slotToMove.player !== this.turn) {
+            // Player should only be able to move on their turn.
+            return { couldMove: false };
+        }
+
+        const dr = Math.abs(toPos[0] - fromPos[0]);
+        const dc = Math.abs(toPos[1] - fromPos[1]);
+
+        if (slotToMove.piece === "rook") {
+            if (fromPos[0] !== toPos[0] || fromPos[1] !== toPos[1]) {
+                // Disallow diagonal rook moves.
+                return { couldMove: false };
+            }
+            // TODO
+        }
+        else if (slotToMove.piece === "bishop") {
+            if (dr != dc) {
+                // Only allow diagonal moves.
+                return { couldMove: false };
+            }
+            // TODO
+        }
+        else if (slotToMove.piece === "queen") {
+            // TODO: only allow rook or bishop moves
+        }
+        else if (slotToMove.piece === "king") {
+            if (dr > 1 || dc > 1) {
+                // Only allow king moves.
+                return { couldMove: false };
+            }
+            // TODO
+        }
+        else if (slotToMove.piece === "knight") {
+            if (!((dr == 2 && dc == 1) || (dr == 1 && dc == 2))) {
+                // Only allow knight moves.
+                return { couldMove: false };
+            }
+        }
 
         // Placeholder: Accept any move for now.
-        newGrid[toPos[0]][toPos[1]] = slotToMove;
-        newGrid[fromPos[0]][fromPos[1]] = newEmptySlot();
+        movePiece(newGrid, fromPos, toPos, [fromPos]);
+
+        // Toggle the turn.
+        this.turn = (this.turn === "p1") ? "p2" : "p1";
 
         this.grid = newGrid;
-
         return { couldMove: true };
     }
 
@@ -123,6 +163,22 @@ function rowColToChessCoord(pos) {
 function posInBounds(pos) {
     const [row, col] = pos;
     return row >= 0 && row < 8 && col >= 0 && col < 8;
+}
+
+// Moves a piece (without validation) and colors the piece's path.
+function movePiece(grid, fromPos, toPos, piecePosPath) {
+    const slotToMove = grid[fromPos[0]][fromPos[1]];
+
+    // Fills in the piece's path with the same color turf.
+    for (const pathPos of piecePosPath) {
+        const pathSlot = newEmptySlot();
+        pathSlot.turf = slotToMove.turf;
+
+        const [row, col] = pathPos;
+        grid[row][col] = pathSlot;
+    }
+
+    grid[toPos[0]][toPos[1]] = slotToMove;
 }
 
 function newEmptySlot() {
