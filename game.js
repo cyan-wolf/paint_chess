@@ -95,6 +95,19 @@ function genRandomColorConfig() {
                 bgDark: "#1f5b61",
             },
         },
+        // Mint green and pink.
+        {
+            p1: {
+                piece: "#03fc98",
+                bgLight: "#9cffde",
+                bgDark: "#1f6152",
+            },
+            p2: {
+                piece: "#fc039d",
+                bgLight: "#ff9cf5",
+                bgDark: "#611f5a",
+            },
+        },
     ];
 
     // Pick a random config.
