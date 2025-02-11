@@ -101,6 +101,7 @@ class Board {
             // Clear piece style.
             const pieceElem = slotElem.children[0];
             pieceElem.classList = "";
+            pieceElem.innerHTML = "";
         }
     }
 

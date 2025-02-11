@@ -235,7 +235,21 @@ io.on("connection", (socket) => {
         const gameId = activePlayers[username].gameId;
         const game = activeGamesDb[gameId];
 
-        console.log(move);
+        if (typeof move !== "object") {
+            return; // do not accept strange input
+        }
+        move.username = username;
+
+        const { couldMove } = game.processMove(move);
+
+        if (!couldMove) {
+            return;
+        }
+
+        for (const usernameInGame of game.getUsers()) {
+            const gameData = game.asClientView(usernameInGame);
+            io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+        }
     });
 });
 

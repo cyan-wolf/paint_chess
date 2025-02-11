@@ -40,6 +40,13 @@
                 socket.emit("perform-move", move);
             });
         });
+
+        socket.on("move-performed-response", (gameData) => {
+            globals.board.update(gameData.boardDesc);
+            loadPieces();
+
+            //console.log(gameData.boardDesc);
+        });
     </script>
 </body>
 </html>

@@ -7,18 +7,17 @@ export class Board {
         for (let r = 0; r < 8; r++) {
             const row = [];
             for (let c = 0; c < 8; c++) {
-                row.push({
-                    piece: null,
-                    player: null,
-                    turf: null,
-                });
+                row.push(newEmptySlot());
             }
             this.grid.push(row);
         }
+
+        this.loadBoardDesc(genInitialChessBoardDesc());
     }
 
+    // Processes a move given by the game itself.
     processMove(move) {
-        const { from, to } = move;
+        const { from, to, player } = move;
 
         if (from === undefined || to === undefined) {
             return { couldMove: false };
@@ -31,16 +30,64 @@ export class Board {
             return { couldMove: false };
         }
 
-        // Accept any move for now.
-        const grid = structuredClone(this.grid);
+        // Placeholder: Accept any move for now.
+
+        const newGrid = structuredClone(this.grid);
 
         // TODO
-        grid[toPos[0]][toPos[1]] = grid[fromPos[0]][fromPos[1]];
-        grid[fromPos[0]][fromPos[1]] = {
-            piece: null,
-            player: null,
-            turf: null,
-        };
+        newGrid[toPos[0]][toPos[1]] = newGrid[fromPos[0]][fromPos[1]];
+        newGrid[fromPos[0]][fromPos[1]] = newEmptySlot();
+
+        this.grid = newGrid;
+
+        return { couldMove: true };
+    }
+
+    // Clears the board's grid.
+    clearGrid() {
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                this.grid[r][c] = newEmptySlot();
+            }
+        }
+    }
+
+    // Turns the board's grid into a board description object.
+    toBoardDesc() {
+        const boardDesc = {};
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const gridSlot = this.grid[r][c];
+                const slot = {};
+
+                if (gridSlot.piece != null) {
+                    slot.piece = gridSlot.piece;
+                }
+                if (gridSlot.player != null) {
+                    slot.player = gridSlot.player;
+                }
+                if (gridSlot.turf != null) {
+                    slot.turf = gridSlot.turf;
+                }
+
+                if (Object.keys(slot).length != 0) {
+                    const chessCoord = rowColToChessCoord([r, c]);
+                    boardDesc[chessCoord] = slot;
+                }
+            }
+        }
+        return boardDesc;
+    }
+
+    // Loads a board description object into the board's grid.
+    loadBoardDesc(boardDesc) {
+        this.clearGrid();
+
+        for (const chessCoord of Object.keys(boardDesc)) {
+            const [row, col] = chessCoordToRowCol(chessCoord);
+            this.grid[row][col] = boardDesc[chessCoord];
+        }
     }
 }
 
@@ -69,8 +116,16 @@ function posInBounds(pos) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
+function newEmptySlot() {
+    return {
+        piece: null,
+        player: null,
+        turf: null,
+    };
+}
+
 // Generates a sample initial board description object.
-export function genInitialChessBoardDesc() {
+function genInitialChessBoardDesc() {
     const boardDesc = {
         // First player's side.
         "a1": {

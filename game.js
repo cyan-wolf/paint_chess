@@ -1,4 +1,4 @@
-import { Board, genInitialChessBoardDesc } from "./board.js";
+import { Board } from "./board.js";
 
 export class Game {
     constructor(meta) {
@@ -47,10 +47,42 @@ export class Game {
                 isFlipped,
                 colorConfig: this.colorConfig,
             },
-            boardDesc: genInitialChessBoardDesc(),
+            boardDesc: this.board.toBoardDesc(),
         };
 
         return data;
+    }
+
+    // Determines whether the given username is 
+    // player 1 or player 2.
+    getUserPlayerRole(username) {
+        const users = this.getUsers();
+
+        if (username === users[0]) {
+            return "p1";
+        } else if (username === users[1]) {
+            return "p2";
+        } else {
+            return "unknown";
+        }
+    }
+
+    // Processes a move from the user.
+    processMove(rawMove) {
+        const { from, to, username } = rawMove;
+
+        // TODO: Add more validation.
+        if (from === undefined || to === undefined || username === undefined ) {
+            return { couldMove: false };
+        }
+
+        const role = this.getUserPlayerRole(username);
+        if (role === "unknown") {
+            return { couldMove: false };
+        }
+
+        const move = { from, to, player: role };
+        return this.board.processMove(move);
     }
 }
 
