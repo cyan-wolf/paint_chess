@@ -1,11 +1,12 @@
-import express from "express";
+import express from "npm:express@4.18.2";
 import http from "node:http";
 import path from "node:path";
-import session from "express-session";
-import { Server } from "socket.io";
+import session from "npm:express-session@1.18.1";
+
+import { Server } from "npm:socket.io@4.8.1"
 
 // Load configuration environment variables.
-import dotenv from "dotenv";
+import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
 import { Game } from "./game.js";
@@ -259,3 +260,7 @@ const port = process.env.PORT || 3000;
 server.listen(port, () => {
     console.log(`App running at http://localhost:${port}.`);
 });
+
+// await serve(io.handler(), {
+//     port
+// });

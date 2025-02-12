@@ -1,8 +1,8 @@
 // Load configuration environment variables.
-import dotenv from "dotenv";
+import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
-import { MongoClient, ServerApiVersion } from 'mongodb';
+import { MongoClient, ServerApiVersion } from 'npm:mongodb@6.13.0';
 const uri = process.env.ATLAS_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version.
