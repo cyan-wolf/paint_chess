@@ -1,6 +1,9 @@
 
 // Server-side board class.
 export class Board {
+    grid: Slot[][]
+    turn: PlayerRole
+
     constructor() {
         this.grid = [];
         this.turn = "p1";
@@ -17,7 +20,7 @@ export class Board {
     }
 
     // Processes a move given by the game itself.
-    processMove(move) {
+    processMove(move: Move) {
         const { from, to, player } = move;
 
         if (from === undefined || to === undefined) {
@@ -102,13 +105,13 @@ export class Board {
     }
 
     // Turns the board's grid into a board description object.
-    toBoardDesc() {
-        const boardDesc = {};
+    toBoardDesc(): BoardDescription {
+        const boardDesc: BoardDescription = {};
 
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
                 const gridSlot = this.grid[r][c];
-                const slot = {};
+                const slot: SlotDescription = {};
 
                 if (gridSlot.piece != null) {
                     slot.piece = gridSlot.piece;
@@ -130,18 +133,30 @@ export class Board {
     }
 
     // Loads a board description object into the board's grid.
-    loadBoardDesc(boardDesc) {
+    loadBoardDesc(boardDesc: BoardDescription): void {
         this.clearGrid();
 
         for (const chessCoord of Object.keys(boardDesc)) {
             const [row, col] = chessCoordToRowCol(chessCoord);
-            this.grid[row][col] = boardDesc[chessCoord];
+
+            const slot = this.grid[row][col];
+            const slotDesc = boardDesc[chessCoord];
+
+            if (slotDesc.piece !== undefined) {
+                slot.piece = slotDesc.piece;
+            }
+            if (slotDesc.player !== undefined) {
+                slot.player = slotDesc.player;
+            }
+            if (slotDesc.turf !== undefined) {
+                slot.turf = slotDesc.turf;
+            }
         }
     }
 }
 
 // Converts a chess coordinate string into a row/column pair.
-function chessCoordToRowCol(chessCoord) {
+function chessCoordToRowCol(chessCoord: Coord): Pos {
     const [file, rank] = chessCoord;
 
     const row = 8 - parseInt(rank);
@@ -151,7 +166,7 @@ function chessCoordToRowCol(chessCoord) {
 }
 
 // Converts a row/column pair into a chess coordinate string.
-function rowColToChessCoord(pos) {
+function rowColToChessCoord(pos: Pos): Coord {
     const [row, col] = pos;
 
     const file = String.fromCharCode(col + "a".charCodeAt(0));
@@ -160,13 +175,13 @@ function rowColToChessCoord(pos) {
     return `${file}${rank}`;
 }
 
-function posInBounds(pos) {
+function posInBounds(pos: Pos) {
     const [row, col] = pos;
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
 // Moves a piece (without validation) and colors the piece's path.
-function movePiece(grid, fromPos, toPos, piecePosPath) {
+function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]) {
     const slotToMove = grid[fromPos[0]][fromPos[1]];
 
     // Fills in the piece's path with the same color turf.
@@ -181,7 +196,7 @@ function movePiece(grid, fromPos, toPos, piecePosPath) {
     grid[toPos[0]][toPos[1]] = slotToMove;
 }
 
-function newEmptySlot() {
+function newEmptySlot(): Slot {
     return {
         piece: null,
         player: null,
@@ -190,8 +205,8 @@ function newEmptySlot() {
 }
 
 // Generates a sample initial board description object.
-function genInitialChessBoardDesc() {
-    const boardDesc = {
+function genInitialChessBoardDesc(): BoardDescription {
+    const boardDesc: BoardDescription = {
         // First player's side.
         "a1": {
             piece: "rook",

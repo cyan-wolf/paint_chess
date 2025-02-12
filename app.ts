@@ -1,7 +1,12 @@
+// @ts-types="npm:@types/express@4.17.15"
 import express from "npm:express@4.18.2";
+
+// @ts-types="npm:@types/express-session@1.18.1"
+import session from "npm:express-session@1.18.1";
+
 import http from "node:http";
 import path from "node:path";
-import session from "npm:express-session@1.18.1";
+import process from "node:process";
 
 import { Server } from "npm:socket.io@4.8.1"
 
@@ -9,14 +14,14 @@ import { Server } from "npm:socket.io@4.8.1"
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
-import { Game } from "./game.js";
+import { Game } from "./game.ts";
 import db from "./db_conn.js";
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const __dirname = import.meta.dirname;
+const __dirname = import.meta.dirname!;
 
 // Used for public files, such as front-end JS scripts and CSS.
 app.use('/public', express.static(path.join(__dirname, "public")));
@@ -26,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Used for sessions.
 const sessionMiddleware = session({
-    secret: process.env.EXPRESS_SECRET,
+    secret: process.env.EXPRESS_SECRET!,
     resave: false,
     saveUninitialized: false,
 });
@@ -36,6 +41,19 @@ app.use(sessionMiddleware);
 
 // Makes sessions accessible from socket event handlers.
 io.engine.use(sessionMiddleware);
+
+
+type User = {
+    username: string,
+    id: string, // unnecessary?
+};
+
+// Augment express-session with a custom SessionData object.
+declare module "npm:express-session@1.18.1" {
+    interface SessionData {
+      user: User;
+    }
+}
 
 // Setup routes.
 
@@ -60,7 +78,7 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
         return;
     }
-    req.session.destroy();
+    req.session.destroy(() => {});
     res.redirect('/');
 });
 
@@ -69,7 +87,7 @@ app.post('/register', (req, res) => {
 });
 
 // Placeholder login validator.
-function checkLogin(reqBody) {
+function checkLogin(reqBody: { username: string, password: string }) {
     return reqBody.username === "user123" && reqBody.password === "123"
         || reqBody.username === "other_user" && reqBody.password === "456";
 }
@@ -107,8 +125,18 @@ app.post('/find-game', (req, res) => {
 });
 
 // Placeholder way of storing game data.
-const queuedGamesDb = {};
-const activeGamesDb = {};
+type GameQueue = {
+    [gameId: string]: {
+        waitingPlayers: string[]
+    }
+};
+
+type ActiveGames = {
+    [gameId: string]: Game
+};
+
+const queuedGamesDb: GameQueue = {};
+const activeGamesDb: ActiveGames = {};
 const activePlayers = {};
 
 app.get("/game/:id", (req, res) => {
@@ -260,7 +288,3 @@ const port = process.env.PORT || 3000;
 server.listen(port, () => {
     console.log(`App running at http://localhost:${port}.`);
 });
-
-// await serve(io.handler(), {
-//     port
-// });

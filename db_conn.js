@@ -1,3 +1,5 @@
+import process from "node:process";
+
 // Load configuration environment variables.
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();

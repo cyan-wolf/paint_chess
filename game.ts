@@ -1,9 +1,16 @@
-import { Board } from "./board.js";
+import { Board } from "./board.ts";
+
+
 
 export class Game {
-    constructor(meta) {
+    meta: MetaGameInfo
+    board: Board
+    colorConfig: ColorConfig
+
+    constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
+        this.colorConfig = genRandomColorConfig();
     }
 
     id() {
@@ -18,7 +25,7 @@ export class Game {
         return this.meta.joinedPlayers;
     }
 
-    hasUser(username) {
+    hasUser(username: string) {
         return username === this.meta.p1 || username === this.meta.p2;
     }
 
@@ -27,11 +34,11 @@ export class Game {
     }
 
     setup() {
-        // Choose a random color scheme.
-        this.colorConfig = genRandomColorConfig();
+        // TODO: Choose a random color scheme.
+        // ...
     }
 
-    asClientView(username) {
+    asClientView(username: string): GameViewForClient {
         let isFlipped;
 
         if (username === this.meta.p1) {
@@ -55,7 +62,7 @@ export class Game {
 
     // Determines whether the given username is 
     // player 1 or player 2.
-    getUserPlayerRole(username) {
+    getUserPlayerRole(username: string) {
         const users = this.getUsers();
 
         if (username === users[0]) {
@@ -68,7 +75,7 @@ export class Game {
     }
 
     // Processes a move from the user.
-    processMove(rawMove) {
+    processMove(rawMove: RawMove) {
         const { from, to, username } = rawMove;
 
         // TODO: Add more validation.
@@ -81,13 +88,13 @@ export class Game {
             return { couldMove: false };
         }
 
-        const move = { from, to, player: role };
+        const move: Move = { from, to, player: role };
         return this.board.processMove(move);
     }
 }
 
-function genRandomColorConfig() {
-    const configs = [
+function genRandomColorConfig(): ColorConfig {
+    const configs: ColorConfig[] = [
         // Red and blue.
         {
             p1: {
