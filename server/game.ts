@@ -1,7 +1,5 @@
 import { Board } from "./board.ts";
 
-
-
 export class Game {
     meta: MetaGameInfo
     board: Board

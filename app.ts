@@ -14,8 +14,8 @@ import { Server } from "npm:socket.io@4.8.1"
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
-import { Game } from "./game.ts";
-import db from "./db_conn.js";
+import { Game } from "./server/game.ts";
+import db from "./server/db_conn.ts";
 
 const app = express();
 const server = http.createServer(app);
@@ -135,9 +135,15 @@ type ActiveGames = {
     [gameId: string]: Game
 };
 
+type ActivePlayers = {
+    [player: string]: {
+        gameId: string;
+    };
+};
+
 const queuedGamesDb: GameQueue = {};
 const activeGamesDb: ActiveGames = {};
-const activePlayers = {};
+const activePlayers: ActivePlayers = {};
 
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;
