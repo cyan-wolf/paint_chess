@@ -27,8 +27,7 @@ type ColorInfo = {
  * Determines the colors for each player.
  */
 type ColorConfig = {
-    p1: ColorInfo,
-    p2: ColorInfo,
+    [player in PlayerRole]: ColorInfo
 };
 
 /**
