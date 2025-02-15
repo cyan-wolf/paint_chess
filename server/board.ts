@@ -47,12 +47,18 @@ export class Board {
             return false;
         }
 
-        if (!prelimVerifyMove(slotToMove, fromPos, toPos)) {
+        // Basic validation for pieces.
+        if (!prelimVerifyMove(fromPos, toPos, newGrid)) {
             return false;
         }
 
-        // Placeholder: Accept any move for now.
-        movePiece(newGrid, fromPos, toPos, [fromPos]);
+        // Stops pieces from the same player from capturing each other.
+        if (isFriendlyCapture(fromPos, toPos, newGrid)) {
+            return false;
+        }
+
+        // Actually moves the piece and fills in the path it "traversed".
+        movePieceAndGenPath(newGrid, fromPos, toPos);
 
         // Toggle the turn.
         this.turn = (this.turn === "p1") ? "p2" : "p1";
@@ -147,7 +153,70 @@ function posInBounds(pos: Pos) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
+function getInBetweenPositions(fromPos: Pos, toPos: Pos): Pos[] {
+    const inBetween: Pos[] = [];
+
+    const sDr = toPos[0] - fromPos[0];
+    const sDc = toPos[1] - fromPos[1];
+
+    const bishopLikeMovement = Math.abs(sDr) === Math.abs(sDc);
+    const rookLikeMovement = (sDr !== 0 && sDc === 0) || (sDr === 0 && sDc !== 0);
+
+    const pos = structuredClone(fromPos);
+
+    if (bishopLikeMovement || rookLikeMovement) {
+        do {
+            inBetween.push(structuredClone(pos));
+
+            pos[0] += Math.sign(sDr);
+            pos[1] += Math.sign(sDc);
+
+        } while (pos[0] !== toPos[0] || pos[1] !== toPos[1]);
+    }
+
+    return inBetween;
+}
+
+// Moves a piece and fills in the path it "traversed".
+function movePieceAndGenPath(grid: Slot[][], fromPos: Pos, toPos: Pos) {
+    const slotToMove = getSlot(grid, fromPos);
+
+    let path: Pos[] = [];
+
+    const inBetweenPositions = getInBetweenPositions(fromPos, toPos);
+
+    switch (slotToMove.piece) {
+        case "pawn": {
+            path = inBetweenPositions;
+            break;
+        }
+        case "knight":
+            // The knight leaves a trivial path.
+            path.push(fromPos);
+            break; 
+        case "bishop":
+            path = inBetweenPositions;
+            break;
+        case "rook":
+            path = inBetweenPositions;
+            break;
+        case "queen": 
+            path = inBetweenPositions;
+            break;
+        case "king":
+             // The king leaves a trivial path.
+            path.push(fromPos);
+            break;
+    }
+
+    //console.log(path);
+
+    movePiece(grid, fromPos, toPos, path);
+}
+
 // Moves a piece (without validation) and colors the piece's path.
+// The piece's path includes all the slots that the piece "traversed",
+// excluding the final position.
 function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]) {
     const slotToMove = grid[fromPos[0]][fromPos[1]];
 
@@ -164,22 +233,44 @@ function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]
 }
 
 // Does basic (preliminary) validation for pieces.
-function prelimVerifyMove(slot: Slot, fromPos: Pos, toPos: Pos): boolean {
+function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
     const dr = Math.abs(toPos[0] - fromPos[0]);
     const dc = Math.abs(toPos[1] - fromPos[1]);
 
     const validForBishop = () => dr == dc;
     const validForRook = () => (dr != 0 && dc == 0) || (dr == 0 && dc != 0);
 
-    const piece = slot.piece!;
+    const slotToMove = getSlot(grid, fromPos);
+    const piece = slotToMove.piece!;
 
     switch (piece) {
         case "pawn": {
-            // TODO: let pawns move double at the start
-            return dr == 1 && dc == 0;
+            const sDr = toPos[0] - fromPos[0];
+            const movingForward = (slotToMove.player === "p1") ? sDr < 0 : sDr > 0;
+
+            const slotToCapture = getSlot(grid, toPos);
+            const wouldCaptureEnemy = 
+                slotToCapture.piece !== null 
+                && slotToCapture.player !== slotToMove.player;
+
+            const simpleMove = dr === 1 
+                && dc === 0
+                && !wouldCaptureEnemy;
+
+            const currentRow = fromPos[0];
+            const doubleStartingMove = (currentRow === 1 || currentRow === 6) 
+                && dr === 2 
+                && dc === 0
+                && !wouldCaptureEnemy;
+
+            const diagonalCapture = dr === 1
+                && dc === 1 
+                && wouldCaptureEnemy;
+
+            return movingForward && (simpleMove || doubleStartingMove || diagonalCapture);
         }
         case "knight":
-            return (dr == 2 && dc == 1) || (dr == 1 && dc == 2);
+            return (dr === 2 && dc === 1) || (dr === 1 && dc === 2);
         case "bishop":
             return validForBishop();
         case "rook":
@@ -189,6 +280,16 @@ function prelimVerifyMove(slot: Slot, fromPos: Pos, toPos: Pos): boolean {
         case "king":
             return dr <= 1 && dc <= 1;
     }
+}
+
+// Determines whether the specified move would result in a friendly capture.
+function isFriendlyCapture(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
+    return getSlot(grid, fromPos).player === getSlot(grid, toPos).player;
+}
+
+// Gets a slot from the grid at the given position (without validation).
+function getSlot(grid: Slot[][], pos: Pos): Slot {
+    return grid[pos[0]][pos[1]];
 }
 
 function newEmptySlot(): Slot {
