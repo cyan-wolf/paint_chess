@@ -57,12 +57,21 @@ export class Board {
             return false;
         }
 
+        const path = getInBetweenPositions(fromPos, toPos);
+
+        if (!pathIsValid(newGrid, path)) {
+            return false;
+        }
+
         // Actually moves the piece and fills in the path it "traversed".
-        movePieceAndGenPath(newGrid, fromPos, toPos);
+        movePiece(newGrid, fromPos, toPos, path);
+
+        // TODO: look for check and checkmate
 
         // Toggle the turn.
         this.turn = (this.turn === "p1") ? "p2" : "p1";
 
+        // Update the actual grid.
         this.grid = newGrid;
         return true;
     }
@@ -153,6 +162,11 @@ function posInBounds(pos: Pos) {
     return row >= 0 && row < 8 && col >= 0 && col < 8;
 }
 
+// Generates the positions "between" two positions.
+// Always includes the starting position, never includes the 
+// final position.
+// Only returns the starting position if the path is 
+// too short or it involves knight movement.
 function getInBetweenPositions(fromPos: Pos, toPos: Pos): Pos[] {
     const inBetween: Pos[] = [];
 
@@ -173,45 +187,11 @@ function getInBetweenPositions(fromPos: Pos, toPos: Pos): Pos[] {
 
         } while (pos[0] !== toPos[0] || pos[1] !== toPos[1]);
     }
-
-    return inBetween;
-}
-
-// Moves a piece and fills in the path it "traversed".
-function movePieceAndGenPath(grid: Slot[][], fromPos: Pos, toPos: Pos) {
-    const slotToMove = getSlot(grid, fromPos);
-
-    let path: Pos[] = [];
-
-    const inBetweenPositions = getInBetweenPositions(fromPos, toPos);
-
-    switch (slotToMove.piece) {
-        case "pawn": {
-            path = inBetweenPositions;
-            break;
-        }
-        case "knight":
-            // The knight leaves a trivial path.
-            path.push(fromPos);
-            break; 
-        case "bishop":
-            path = inBetweenPositions;
-            break;
-        case "rook":
-            path = inBetweenPositions;
-            break;
-        case "queen": 
-            path = inBetweenPositions;
-            break;
-        case "king":
-             // The king leaves a trivial path.
-            path.push(fromPos);
-            break;
+    else {
+        inBetween.push(fromPos);
     }
 
-    //console.log(path);
-
-    movePiece(grid, fromPos, toPos, path);
+    return inBetween;
 }
 
 // Moves a piece (without validation) and colors the piece's path.
@@ -285,6 +265,24 @@ function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
 // Determines whether the specified move would result in a friendly capture.
 function isFriendlyCapture(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
     return getSlot(grid, fromPos).player === getSlot(grid, toPos).player;
+}
+
+function pathIsValid(grid: Slot[][], path: Pos[]): boolean {
+    const slotToMove = getSlot(grid, path[0]);
+
+    for (const pos of path.slice(1)) {
+        const slot = getSlot(grid, pos);
+
+        // Cannot override pieces with path.
+        if (slot.piece !== null) {
+            return false;
+        }
+        // Cannot move across enemy turf.
+        if (slot.turf !== null && slot.turf !== slotToMove.player) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Gets a slot from the grid at the given position (without validation).
