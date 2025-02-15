@@ -22,7 +22,7 @@
         socket.emit("queue-game", {});
     });
 
-    socket.on("game-queue-updated", (gameQueue) => {
+    socket.on("current-game-queue", (gameQueue) => {
         const gameQueueElem = document.getElementById("game-queue");
         gameQueueElem.innerHTML = "";
 
@@ -41,6 +41,11 @@
 
     socket.on("found-game", ({ gameId }) => {
         window.location = `/game/${gameId}`;
+    });
+
+    // Request the server for the game queue on page load.
+    window.addEventListener("load", () => {
+        socket.emit("request-current-game-queue");
     });
 </script>
 </html>

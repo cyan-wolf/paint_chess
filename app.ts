@@ -57,19 +57,19 @@ declare module "npm:express-session@1.18.1" {
 
 // Setup routes.
 
-app.get('/', (req, res) => {
+app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/index.html"));
 });
 
-app.get('/how-to-play', (req, res) => {
+app.get('/how-to-play', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/how-to-play.html"));
 });
 
-app.get('/register', (req, res) => {
+app.get('/register', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/register.html"));
 });
 
-app.get('/login', (req, res) => {
+app.get('/login', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/login.html"));
 });
 
@@ -82,7 +82,7 @@ app.get('/logout', (req, res) => {
     res.redirect('/');
 });
 
-app.post('/register', (req, res) => {
+app.post('/register', (_req, res) => {
     res.send("NOT IMPLEMENTED");
 });
 
@@ -137,7 +137,8 @@ type ActiveGames = {
 
 type ActivePlayers = {
     [player: string]: {
-        gameId: string;
+        gameId: string
+        joined: boolean
     };
 };
 
@@ -170,7 +171,7 @@ app.get("/game/:id", (req, res) => {
     res.sendFile(path.join(__dirname, "client/game.html"));
 });
 
-app.get('/testing', (req, res) => {
+app.get('/testing', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/testing.html"));
 });
 
@@ -187,13 +188,17 @@ io.on("connection", (socket) => {
     // For sending events using only the username.
     socket.join(`user-${username}`);
 
-    socket.on("queue-game", (game_settings) => {
+    socket.on("queue-game", (gameSettings) => {
         const gameId = genId();
         queuedGamesDb[gameId] = {
             waitingPlayers: [],
         };
 
-        io.emit("game-queue-updated", queuedGamesDb);
+        io.emit("current-game-queue", queuedGamesDb);
+    });
+
+    socket.on("request-current-game-queue", () => {
+        io.to(socket.id).emit("current-game-queue", queuedGamesDb);
     });
 
     socket.on("join-game-request", ({ gameId }) => {
@@ -215,14 +220,15 @@ io.on("connection", (socket) => {
             // Joining game logic
             const [p1, p2] = queuedGame.waitingPlayers;
 
-            activePlayers[p1] = { gameId };
-            activePlayers[p2] = { gameId };
+            activePlayers[p1] = { gameId, joined: false };
+            activePlayers[p2] = { gameId, joined: false };
 
             //console.log(`players ${p1} and ${p2} are about to join game ${gameId}`);
 
             const game = new Game({
                 p1, p2, gameId,
                 joinedPlayers: 0,
+                hasStarted: false,
             });
             activeGamesDb[gameId] = game;
             
@@ -230,7 +236,7 @@ io.on("connection", (socket) => {
             io.to(`game-${gameId}`).emit("found-game", { gameId });
         }
         
-        io.emit("game-queue-updated", queuedGamesDb);
+        io.emit("current-game-queue", queuedGamesDb);
     });
 
     socket.on("ready-to-start-game", () => {
@@ -248,12 +254,27 @@ io.on("connection", (socket) => {
 
         const game = activeGamesDb[gameId];
 
-        // Increment the number of joined players.
-        game.joinPlayer();
+        // Player is joining for the first time.
+        if (!activePlayers[username].joined) {
+            // Increment the number of joined players.
+            game.joinPlayer();
 
-        if (game.getJoinedPlayerAmt() == 2) {
-            // Setup various parts of the game.
-            game.setup();
+            activePlayers[username].joined = true;
+        } 
+        // Player is rejoining the game.
+        else if (game.getUsers().includes(username)) {
+            const gameData = game.asClientView(username);
+            io.to(`user-${username}`).emit("game-start", gameData);
+
+            // Exit event handler here to avoid the 
+            // other player from receiving the "game-start" event as well.
+            return;
+        }
+
+        // Officially start the game.
+        if (game.getJoinedPlayerAmt() == 2 && !game.hasStarted()) {
+            // Sets up various parts of the game.
+            game.start();
 
             for (const usernameInGame of game.getUsers()) {
                 const gameData = game.asClientView(usernameInGame);
@@ -275,7 +296,7 @@ io.on("connection", (socket) => {
         }
         move.username = username;
 
-        const { couldMove } = game.processMove(move);
+        const couldMove = game.processMove(move);
 
         if (!couldMove) {
             return;

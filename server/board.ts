@@ -20,18 +20,14 @@ export class Board {
     }
 
     // Processes a move given by the game itself.
-    processMove(move: Move) {
+    processMove(move: Move): boolean {
         const { from, to, player } = move;
-
-        if (from === undefined || to === undefined) {
-            return { couldMove: false };
-        }
 
         const fromPos = chessCoordToRowCol(from);
         const toPos = chessCoordToRowCol(to);
 
         if (!posInBounds(fromPos) || !posInBounds(toPos)) {
-            return { couldMove: false };
+            return false;
         }
 
         const newGrid = structuredClone(this.grid);
@@ -40,49 +36,19 @@ export class Board {
 
         if (slotToMove.piece === null) {
             // Player should only be able to move pieces.
-            return { couldMove: false };
+            return false;
         }
         else if (slotToMove.player !== player) {
             // Player should only be able to move their own pieces.
-            return { couldMove: false };
+            return false;
         }
         else if (slotToMove.player !== this.turn) {
             // Player should only be able to move on their turn.
-            return { couldMove: false };
+            return false;
         }
 
-        const dr = Math.abs(toPos[0] - fromPos[0]);
-        const dc = Math.abs(toPos[1] - fromPos[1]);
-
-        if (slotToMove.piece === "rook") {
-            if (fromPos[0] !== toPos[0] || fromPos[1] !== toPos[1]) {
-                // Disallow diagonal rook moves.
-                return { couldMove: false };
-            }
-            // TODO
-        }
-        else if (slotToMove.piece === "bishop") {
-            if (dr != dc) {
-                // Only allow diagonal moves.
-                return { couldMove: false };
-            }
-            // TODO
-        }
-        else if (slotToMove.piece === "queen") {
-            // TODO: only allow rook or bishop moves
-        }
-        else if (slotToMove.piece === "king") {
-            if (dr > 1 || dc > 1) {
-                // Only allow king moves.
-                return { couldMove: false };
-            }
-            // TODO
-        }
-        else if (slotToMove.piece === "knight") {
-            if (!((dr == 2 && dc == 1) || (dr == 1 && dc == 2))) {
-                // Only allow knight moves.
-                return { couldMove: false };
-            }
+        if (!prelimVerifyMove(slotToMove, fromPos, toPos)) {
+            return false;
         }
 
         // Placeholder: Accept any move for now.
@@ -92,7 +58,7 @@ export class Board {
         this.turn = (this.turn === "p1") ? "p2" : "p1";
 
         this.grid = newGrid;
-        return { couldMove: true };
+        return true;
     }
 
     // Clears the board's grid.
@@ -175,6 +141,7 @@ function rowColToChessCoord(pos: Pos): Coord {
     return `${file}${rank}`;
 }
 
+// Checks that a position is in bounds.
 function posInBounds(pos: Pos) {
     const [row, col] = pos;
     return row >= 0 && row < 8 && col >= 0 && col < 8;
@@ -194,6 +161,34 @@ function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]
     }
 
     grid[toPos[0]][toPos[1]] = slotToMove;
+}
+
+// Does basic (preliminary) validation for pieces.
+function prelimVerifyMove(slot: Slot, fromPos: Pos, toPos: Pos): boolean {
+    const dr = Math.abs(toPos[0] - fromPos[0]);
+    const dc = Math.abs(toPos[1] - fromPos[1]);
+
+    const validForBishop = () => dr == dc;
+    const validForRook = () => (dr != 0 && dc == 0) || (dr == 0 && dc != 0);
+
+    const piece = slot.piece!;
+
+    switch (piece) {
+        case "pawn": {
+            // TODO: let pawns move double at the start
+            return dr == 1 && dc == 0;
+        }
+        case "knight":
+            return (dr == 2 && dc == 1) || (dr == 1 && dc == 2);
+        case "bishop":
+            return validForBishop();
+        case "rook":
+            return validForRook();
+        case "queen": 
+            return validForBishop() || validForRook();
+        case "king":
+            return dr <= 1 && dc <= 1;
+    }
 }
 
 function newEmptySlot(): Slot {

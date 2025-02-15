@@ -9,6 +9,7 @@ type MetaGameInfo = {
     joinedPlayers: number,
     p1: string,
     p2: string,
+    hasStarted: boolean,
 };
 
 /**

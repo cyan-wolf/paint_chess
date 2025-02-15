@@ -31,7 +31,12 @@ export class Game {
         return [this.meta.p1, this.meta.p2];
     }
 
-    setup() {
+    hasStarted() {
+        return this.meta.hasStarted;
+    }
+
+    start() {
+        this.meta.hasStarted = true;
         // TODO: Choose a random color scheme.
         // ...
     }
@@ -73,17 +78,17 @@ export class Game {
     }
 
     // Processes a move from the user.
-    processMove(rawMove: RawMove) {
+    processMove(rawMove: RawMove): boolean {
         const { from, to, username } = rawMove;
 
         // TODO: Add more validation.
         if (from === undefined || to === undefined || username === undefined ) {
-            return { couldMove: false };
+            return false;
         }
 
         const role = this.getUserPlayerRole(username);
         if (role === "unknown") {
-            return { couldMove: false };
+            return false;
         }
 
         const move: Move = { from, to, player: role };
