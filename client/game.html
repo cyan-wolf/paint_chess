@@ -4,20 +4,50 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Chess | Game</title>
-    <link rel="stylesheet" href="/public/styles/style.css">
+    <link rel="stylesheet" href="/public/styles/game.css">
+    <link rel="stylesheet" href="/public/styles/board.css">
 </head>
 <body>
-    <div class="board" id="main-board"></div>
+    <div class="outermost-container">
+        <nav class="nav">
+            <a href="/">Home</a>
+            <a href="/how-to-play">How to Play</a>
+            <a href="/find-game">Find Game</a>
+            <a href="/logout">Logout</a>
+        </nav>
+        <div class="game-content">
+            <div class="left-area">
+                <div id="game-info"></div>
+                <div id="chat-area"></div>
+            </div>
+            <div class="game-area">
+                <div class="board" id="main-board"></div>
+            </div>
+            <div class="right-area">
+                <div id="remaining-time"></div>
+            </div>
+        </div>
+    </div>
 
+    <!-- For client-side socket.io connection. -->
     <script src="/socket.io/socket.io.js"></script>
+
+    <!-- For loading the piece SVGs. -->
     <script src="/public/scripts/load_pieces.js"></script>
+
+    <!-- For having access to the client-side Board class. -->
     <script src="/public/scripts/board.js"></script>
+
+    <!-- 
+        For initializing the board and wiring up board click events to 
+        socket.io to send move data to the server.
+    -->
     <script>
         const globals = {
             board: null,
         };
 
-        const socket = io()
+        const socket = io();
         
         window.addEventListener("load", () => {
             socket.emit("ready-to-start-game");
@@ -27,7 +57,7 @@
             const boardConfig = {
                 element: document.getElementById("main-board"),
                 clickable: true,
-                ...gameData.boardConfig
+                ...gameData.boardConfig,
             };
 
             globals.board = new Board(boardConfig);
@@ -38,8 +68,6 @@
 
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
-                console.log(move);
-
                 socket.emit("perform-move", move);
             });
         });
