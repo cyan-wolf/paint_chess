@@ -31,6 +31,16 @@ export class Game {
         return [this.meta.p1, this.meta.p2];
     }
 
+    roleToUser(role: PlayerRole): string {
+        const users = this.getUsers();
+
+        if (role === "p1") {
+            return users[0];
+        } else {
+            return users[1];
+        }
+    }
+
     hasStarted() {
         return this.meta.hasStarted;
     }
@@ -52,7 +62,18 @@ export class Game {
         }
 
         const data = {
-            gameId: this.meta.gameId,
+            gameInfo: {
+                gameId: this.meta.gameId,
+                p1: {
+                    user: this.roleToUser("p1"),
+                    color: this.colorConfig["p1"].piece,
+                },
+                p2: {
+                    user: this.roleToUser("p2"),
+                    color: this.colorConfig["p2"].piece,
+                },
+                turn: this.roleToUser(this.board.turn),
+            },
             boardConfig: {
                 isFlipped,
                 colorConfig: this.colorConfig,

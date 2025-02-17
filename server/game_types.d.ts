@@ -32,11 +32,24 @@ type ColorConfig = {
 };
 
 /**
+ * Used for filling out the "game-info" section on the client.
+ */
+type PlayerSpecificGameInfo = {
+    user: string,
+    color: string,
+};
+
+/**
  * A representation of a game suitable for sending to the 
  * client.
  */
 type GameViewForClient = {
-    gameId: string;
+    gameInfo: {
+        gameId: string,
+        p1: PlayerSpecificGameInfo,
+        p2: PlayerSpecificGameInfo,
+        turn: string,
+    },
     boardConfig: {
         isFlipped: boolean;
         colorConfig: ColorConfig;
