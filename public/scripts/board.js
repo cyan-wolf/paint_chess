@@ -39,9 +39,9 @@ class Board {
 
         // Create the checkerboard pattern.
         if (posShouldBeLight([row, col])) {
-            slot.style.backgroundColor = "white";
+            slot.style.backgroundColor = this.getDefaultLightSlotColor();
         } else {
-            slot.style.backgroundColor = "black";
+            slot.style.backgroundColor = this.getDefaultLightSlotColor();
         }
 
         // Fill in the `boardPositions` object for easy access to the board 
@@ -98,9 +98,9 @@ class Board {
 
             // Reset the checkerboard pattern.
             if (posShouldBeLight([row, col])) {
-                slotElem.style.backgroundColor = "white";
+                slotElem.style.backgroundColor = this.getDefaultLightSlotColor();
             } else {
-                slotElem.style.backgroundColor = "black";
+                slotElem.style.backgroundColor = this.getDefaultDarkSlotColor();
             }
 
             // Clear piece style.
@@ -162,6 +162,14 @@ class Board {
         const slotContents = slotElem.children[0];
 
         return slotContents.classList.contains("piece");
+    }
+
+    getDefaultLightSlotColor() {
+        return "white";
+    }
+
+    getDefaultDarkSlotColor() {
+        return "#787777";
     }
 }
 
