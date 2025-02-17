@@ -58,6 +58,7 @@ class Board {
             // Remember the coordinate of the last clicked slot.
             if (this.lastClickedCoord === null) {
                 this.lastClickedCoord = chessCoord;
+                this.selectSlot(chessCoord);
                 return;
             }
 
@@ -72,6 +73,7 @@ class Board {
 
                 // Reset the last clicked coord.
                 this.lastClickedCoord = null;
+                this.deselectAllSlots();
             }
         });
 
@@ -84,6 +86,9 @@ class Board {
 
     // Clears the board.
     clear() {
+        // Deselect slots.
+        this.deselectAllSlots();
+
         for (let index = 0; index < 8 * 8; index++) {
             // Calculate the row and column using the index.
             const row = Math.floor(index / 8);
@@ -103,6 +108,18 @@ class Board {
             pieceElem.classList = "";
             pieceElem.innerHTML = "";
         }
+    }
+
+    deselectAllSlots() {
+        for (let index = 0; index < 8 * 8; index++) {
+            const slotElem = this.boardElem.children[index];
+            slotElem.classList.remove("selected");
+        }
+    }
+
+    selectSlot(chessCoord) {
+        this.deselectAllSlots();
+        this.boardPositions[chessCoord].classList.add("selected");
     }
 
     // Updates the board using a board description object.

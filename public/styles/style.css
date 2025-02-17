@@ -12,6 +12,11 @@
     height: 70px;
 }
 
+.slot.selected {
+    margin: -4px;
+    border: 2px solid green;
+}
+
 .piece {
     display: block;
 }
