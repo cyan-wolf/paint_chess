@@ -41,6 +41,16 @@ export class Game {
         }
     }
 
+    userToRole(username: string): PlayerRole {
+        if (username === this.meta.p1) {
+            return "p1";
+        } else if (username === this.meta.p2) {
+            return "p2";
+        } else {
+            throw Error("unknown user");
+        }
+    }
+
     hasStarted() {
         return this.meta.hasStarted;
     }
@@ -65,14 +75,17 @@ export class Game {
             gameInfo: {
                 gameId: this.meta.gameId,
                 p1: {
-                    user: this.roleToUser("p1"),
+                    username: this.roleToUser("p1"),
                     color: this.colorConfig["p1"].piece,
                 },
                 p2: {
-                    user: this.roleToUser("p2"),
+                    username: this.roleToUser("p2"),
                     color: this.colorConfig["p2"].piece,
                 },
-                turn: this.roleToUser(this.board.turn),
+                turn: {
+                    username: this.roleToUser(this.board.turn),
+                    color: this.colorConfig[this.board.turn].piece,
+                },
             },
             boardConfig: {
                 isFlipped,

@@ -35,6 +35,14 @@ body {
     color: white;
 }
 
+.dot {
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border-radius: 50%;
+    display: inline-block;
+}
+
 #chat-area {
     width: 20vw;
     height: 50%;
@@ -77,26 +85,35 @@ body {
     height: max-content;
     padding: 10px;
     text-decoration: none;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: bold;
+    --variant-color: white;
+    color: var(--variant-color);
 }
 
 .nav a:hover {
-    background-color: gray;
+    text-shadow: 
+        0 0 30px var(--variant-color), 
+        0 0 40px var(--variant-color), 
+        0 0 50px var(--variant-color), 
+        0 0 60px var(--variant-color), 
+        0 0 70px var(--variant-color),
+        0 0 80px var(--variant-color);
 }
 
 .nav a:nth-child(1) {
-    color: red;
+    /* color: red; */
+    --variant-color: red;
 }
 
 .nav a:nth-child(2) {
-    color: orange;
+    --variant-color: orange;
 }
 
 .nav a:nth-child(3) {
-    color: yellow;
+    --variant-color: yellow;
 }
 
 .nav a:nth-child(4) {
-    color: lime;
+    --variant-color: lime;
 }

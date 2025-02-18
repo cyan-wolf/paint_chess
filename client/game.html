@@ -18,9 +18,15 @@
         <div class="game-content">
             <div class="left-area">
                 <div id="game-info">
-                    <p>Your username: </p>
-                    <p>Opponent username: </p>
-                    <p>Turn: </p>
+                    <div id="game-info-p1">
+                        <span class="dot"></span><span></span>
+                    </div>
+                    <div id="game-info-p2">
+                        <span class="dot"></span><span></span>
+                    </div>
+                    <div id="game-info-turn">
+                        Turn: <span class="dot"></span><span></span>
+                    </div>
                 </div>
                 <div id="chat-area">
                     <div id="chat-history"></div>
@@ -54,6 +60,17 @@
             board: null,
         };
 
+        function updateGameInfoSection(gameInfo) {
+            const displayLabels = ["p1", "p2", "turn"];
+
+            for (const label of displayLabels) {
+                const displayElem = document.getElementById(`game-info-${label}`);
+
+                displayElem.children[0].style.backgroundColor = gameInfo[label].color;
+                displayElem.children[1].innerHTML = gameInfo[label].username;
+            }
+        }
+
         const socket = io();
         
         window.addEventListener("load", () => {
@@ -73,6 +90,8 @@
             // Load piece SVGs.
             loadPieces();
 
+            updateGameInfoSection(gameData.gameInfo);
+
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
                 socket.emit("perform-move", move);
@@ -82,6 +101,7 @@
         socket.on("move-performed-response", (gameData) => {
             globals.board.update(gameData.boardDesc);
             loadPieces();
+            updateGameInfoSection(gameData.gameInfo);
         });
     </script>
 </body>
