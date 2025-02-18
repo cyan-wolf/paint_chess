@@ -75,6 +75,7 @@
         
         window.addEventListener("load", () => {
             socket.emit("ready-to-start-game");
+            socket.emit("request-current-chat-history");
         });
 
         socket.on("game-start", (gameData) => {
@@ -102,6 +103,28 @@
             globals.board.update(gameData.boardDesc);
             loadPieces();
             updateGameInfoSection(gameData.gameInfo);
+        });
+
+        const chatInput = document.getElementById("chat-input");
+        chatInput.addEventListener("keyup", ({ key }) => {
+            if (key === "Enter") {
+                socket.emit("chat-publish", { content: chatInput.value });
+            }
+        });
+
+        socket.on("current-chat-history", ({ history }) => {
+            const historyElem = document.getElementById("chat-history");
+            historyElem.innerHTML = "";
+
+            chatInput.value = "";
+
+            for (const message of history) {
+                const { by, content } = message;
+                const messageElement = document.createElement("p");
+                messageElement.innerHTML = `${by}: ${content}`;
+             
+                historyElem.appendChild(messageElement);
+            }
         });
     </script>
 </body>

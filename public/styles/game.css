@@ -51,6 +51,14 @@ body {
 
 #chat-history {
     height: 90%;
+    overflow-y: scroll;
+}
+
+#chat-history p {
+    color: white;
+    margin: 0;
+    margin-bottom: 10px;
+    padding: 0;
 }
 
 #chat-input {

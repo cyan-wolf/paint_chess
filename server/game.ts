@@ -4,11 +4,13 @@ export class Game {
     meta: MetaGameInfo
     board: Board
     colorConfig: ColorConfig
+    messageHistory: Message[]
 
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
         this.colorConfig = genRandomColorConfig();
+        this.messageHistory = [];
     }
 
     id() {
@@ -127,6 +129,22 @@ export class Game {
 
         const move: Move = { from, to, player: role };
         return this.board.processMove(move);
+    }
+
+    publishMessage(message: Message): void {
+        this.messageHistory.push(message);
+    }
+
+    getMessageHistory(amount: number): Message[] {
+        if (amount < 0) {
+            return [];
+        }
+
+        if (this.messageHistory.length >= amount) {
+            return structuredClone(this.messageHistory);
+        }
+
+        return this.messageHistory.slice(-amount);
     }
 }
 

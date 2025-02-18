@@ -67,3 +67,7 @@ type RawMove = {
     username?: string,
 };
 
+type Message = {
+    by: string,
+    content: string,
+};

@@ -308,6 +308,51 @@ io.on("connection", (socket) => {
             io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
         }
     });
+
+    socket.on("chat-publish", ({ content }) => {
+        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+
+        if (typeof content !== 'string') {
+            return; // do not accept strange input
+        }
+
+        if (content.length === 0) {
+            return; // only accept valid messages
+        }
+
+        const gameId = activePlayers[username].gameId;
+        const game = activeGamesDb[gameId];
+
+        game.publishMessage({
+            by: username,
+            content,
+        });
+
+        // Send the chat to the users in the game.
+        for (const usernameInGame of game.getUsers()) {
+            io.to(`user-${usernameInGame}`)
+                .emit("current-chat-history", {
+                    history: game.getMessageHistory(9)
+                });
+        }
+    });
+
+    socket.on("request-current-chat-history", () => {
+        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = activePlayers[username].gameId;
+        const game = activeGamesDb[gameId];
+
+        io.to(socket.id)
+            .emit("current-chat-history", {
+                history: game.getMessageHistory(9)
+            });
+    });
 });
 
 const port = process.env.PORT || 3000;
