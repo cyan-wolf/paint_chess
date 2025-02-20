@@ -8,7 +8,7 @@ import http from "node:http";
 import path from "node:path";
 import process from "node:process";
 
-import { Server } from "npm:socket.io@4.8.1"
+import { Server } from "npm:socket.io@4.8.1";
 
 // Load configuration environment variables.
 import dotenv from "npm:dotenv@16.4.7";
