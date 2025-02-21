@@ -9,6 +9,7 @@ type MetaGameInfo = {
     joinedPlayers: number,
     p1: string,
     p2: string,
+    secsPerPlayer: number,
     hasStarted: boolean,
 };
 
@@ -70,4 +71,11 @@ type RawMove = {
 type Message = {
     by: string,
     content: string,
+};
+
+type TimeInfo = {
+    [player in PlayerRole]: {
+        millisLeft: number,
+        lastTimestamp: number | null,
+    }
 };

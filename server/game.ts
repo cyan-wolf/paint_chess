@@ -4,13 +4,31 @@ export class Game {
     meta: MetaGameInfo
     board: Board
     colorConfig: ColorConfig
+
     messageHistory: Message[]
+    timeInfo: TimeInfo
+    // TODO: Use this ID to cancel the timer started by this game.
+    intervalTimerCancelID: number
 
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
         this.colorConfig = genRandomColorConfig();
+
         this.messageHistory = [];
+
+        this.timeInfo = {
+            p1: {
+                millisLeft: this.meta.secsPerPlayer * 1000,
+                lastTimestamp: null,
+            },
+            p2: {
+                millisLeft: this.meta.secsPerPlayer * 1000,
+                lastTimestamp: null,
+            },
+        };
+
+        this.intervalTimerCancelID = this.setupCountdownTimer();
     }
 
     id() {
@@ -59,8 +77,6 @@ export class Game {
 
     start() {
         this.meta.hasStarted = true;
-        // TODO: Choose a random color scheme.
-        // ...
     }
 
     asClientView(username: string): GameViewForClient {
@@ -128,7 +144,14 @@ export class Game {
         }
 
         const move: Move = { from, to, player: role };
-        return this.board.processMove(move);
+
+        const couldMove = this.board.processMove(move);
+
+        if (couldMove) {
+            this.toggleTimerCountdown();
+        }
+
+        return couldMove;
     }
 
     publishMessage(message: Message): void {
@@ -145,6 +168,52 @@ export class Game {
         }
 
         return this.messageHistory.slice(-amount);
+    }
+
+    // Sets up up a timer that asynchronously removes time 
+    // from players during their turn.
+    // Returns an ID that can be used to cancel the timer 
+    // using the `clearInterval` global function.
+    setupCountdownTimer(): number {
+        const cancelID = setInterval(() => {
+            for (const player of Object.keys(this.timeInfo)) {
+                const timeInfo = this.timeInfo[player as PlayerRole];
+
+                if (timeInfo.lastTimestamp !== null) {
+                    const elapsedMillis = performance.now() - timeInfo.lastTimestamp;
+                    timeInfo.lastTimestamp = performance.now();
+                    timeInfo.millisLeft = Math.max(timeInfo.millisLeft - elapsedMillis, 0);
+                }
+
+                // Debug.
+                const secsLeft = timeInfo.millisLeft / 1000;
+                console.log(`${player} has ${secsLeft.toFixed(2)} secs left`);
+            }
+        }, 500);
+        return cancelID;
+    }
+
+    // Used for switching which player's time experiences
+    // a countdown after a move.
+    toggleTimerCountdown() {
+        // Toggle the current board turn, since that would've been 
+        // the last player's role.
+        const currentPlayer = this.board.turn;
+        const lastMovedPlayer = (this.board.turn === "p1") ? "p2" : "p1";
+
+        // Detects whether the last move was the first move in the game.
+        // This needs to be checked since the timer rules work differently 
+        // after the first move.
+        const wasFirstMoveOfTheGame = 
+            lastMovedPlayer === "p1" 
+                && this.timeInfo["p1"].lastTimestamp === null
+                && this.timeInfo["p2"].lastTimestamp === null;
+
+        if (!wasFirstMoveOfTheGame) {
+            // Switches the user that the timer counts down.
+            this.timeInfo[currentPlayer].lastTimestamp = performance.now();
+            this.timeInfo[lastMovedPlayer].lastTimestamp = null;
+        }
     }
 }
 
