@@ -158,7 +158,7 @@ app.get("/game/:id", (req, res) => {
 
     // Game ID must be valid.
     if (!Object.hasOwn(activeGamesDb, gameId)) {
-        res.status(400).send("Invalid Game ID");
+        res.redirect("/find-game");
         return;
     }
     const game = activeGamesDb[gameId];
@@ -232,6 +232,30 @@ io.on("connection", (socket) => {
                 hasStarted: false,
             });
             activeGamesDb[gameId] = game;
+
+            game.addOnGameEndEventHandler((result) => {
+                console.log("game ended!");
+                console.log(`reason: ${result.method}; won by ${result.winner}`);
+
+                for (const usernameInGame of game.getUsers()) {
+                    const gameData = game.asClientView(usernameInGame);
+
+                    // Send the final state of the game to all players before ending the game.
+                    io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+
+                    // Ends the game on the client.
+                    io.to(`user-${usernameInGame}`).emit("game-ended", { result });
+
+                    // TODO: add a record of the results of the game to the database
+                    // ...
+
+                    // Make the player no longer active.
+                    delete activePlayers[usernameInGame];
+                }
+
+                // Make the game no longer active.
+                delete activeGamesDb[gameId];
+            });
             
             // Redirects the user to "/game/:id" on the client.
             io.to(`game-${gameId}`).emit("found-game", { gameId });
@@ -353,6 +377,21 @@ io.on("connection", (socket) => {
             .emit("current-chat-history", {
                 history: game.getMessageHistory(9)
             });
+    });
+
+    socket.on("resign", () => {
+        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = activePlayers[username].gameId;
+        const game = activeGamesDb[gameId];
+
+        game.finish({
+            // The other player wins.
+            winner: Game.togglePlayerRole(game.userToRole(username)),
+            method: "resign",
+        });
     });
 });
 

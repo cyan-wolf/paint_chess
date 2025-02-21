@@ -52,10 +52,14 @@ type GameViewForClient = {
         turn: PlayerSpecificGameInfo,
     },
     boardConfig: {
-        isFlipped: boolean;
-        colorConfig: ColorConfig;
+        isFlipped: boolean,
+        colorConfig: ColorConfig,
     };
-    boardDesc: BoardDescription;
+    boardDesc: BoardDescription,
+    timeDesc: {
+        ownSecsLeft: number,
+        opponentSecsLeft: number,
+    },
 };
 
 /**
@@ -79,3 +83,10 @@ type TimeInfo = {
         lastTimestamp: number | null,
     }
 };
+
+type GameEndResult = {
+    winner: PlayerRole | null,
+    method: "timeout" | "resign" | "stalemate" | "checkmate",
+};
+
+type GameEndDelegate = (result: GameEndResult) => void;

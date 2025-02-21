@@ -10,6 +10,9 @@ export class Game {
     // TODO: Use this ID to cancel the timer started by this game.
     intervalTimerCancelID: number
 
+    onGameEndDelegates: GameEndDelegate[]
+    hasEnded: boolean
+
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
@@ -29,6 +32,9 @@ export class Game {
         };
 
         this.intervalTimerCancelID = this.setupCountdownTimer();
+
+        this.onGameEndDelegates = [];
+        this.hasEnded = false;
     }
 
     id() {
@@ -81,12 +87,21 @@ export class Game {
 
     asClientView(username: string): GameViewForClient {
         let isFlipped;
+        let timeDesc;
 
-        if (username === this.meta.p1) {
+        if (this.userToRole(username) === "p1") {
             isFlipped = false;
+            timeDesc = {
+                ownSecsLeft: this.timeInfo["p1"].millisLeft / 1000,
+                opponentSecsLeft: this.timeInfo["p2"].millisLeft / 1000,
+            };
         }
         else {
             isFlipped = true;
+            timeDesc = {
+                ownSecsLeft: this.timeInfo["p2"].millisLeft / 1000,
+                opponentSecsLeft: this.timeInfo["p1"].millisLeft / 1000,
+            };
         }
 
         const data = {
@@ -110,6 +125,7 @@ export class Game {
                 colorConfig: this.colorConfig,
             },
             boardDesc: this.board.toBoardDesc(),
+            timeDesc,
         };
 
         return data;
@@ -131,6 +147,10 @@ export class Game {
 
     // Processes a move from the user.
     processMove(rawMove: RawMove): boolean {
+        if (this.hasEnded) {
+            return false;
+        }
+
         const { from, to, username } = rawMove;
 
         // TODO: Add more validation.
@@ -183,11 +203,18 @@ export class Game {
                     const elapsedMillis = performance.now() - timeInfo.lastTimestamp;
                     timeInfo.lastTimestamp = performance.now();
                     timeInfo.millisLeft = Math.max(timeInfo.millisLeft - elapsedMillis, 0);
+
+                    if (timeInfo.millisLeft === 0.0) {
+                        this.finish({
+                            winner: Game.togglePlayerRole(player as PlayerRole),
+                            method: "timeout",
+                        });
+                    }
                 }
 
-                // Debug.
-                const secsLeft = timeInfo.millisLeft / 1000;
-                console.log(`${player} has ${secsLeft.toFixed(2)} secs left`);
+                // // Debug.
+                // const secsLeft = timeInfo.millisLeft / 1000;
+                // console.log(`${player} has ${secsLeft.toFixed(2)} secs left`);
             }
         }, 500);
         return cancelID;
@@ -199,7 +226,7 @@ export class Game {
         // Toggle the current board turn, since that would've been 
         // the last player's role.
         const currentPlayer = this.board.turn;
-        const lastMovedPlayer = (this.board.turn === "p1") ? "p2" : "p1";
+        const lastMovedPlayer = Game.togglePlayerRole(this.board.turn);
 
         // Detects whether the last move was the first move in the game.
         // This needs to be checked since the timer rules work differently 
@@ -214,6 +241,30 @@ export class Game {
             this.timeInfo[currentPlayer].lastTimestamp = performance.now();
             this.timeInfo[lastMovedPlayer].lastTimestamp = null;
         }
+    }
+
+    // Ends the current game.
+    finish(result: GameEndResult) {
+        if (this.hasEnded) {
+            return;
+        }
+
+        // Clears the interval used for the countdown timer.
+        clearInterval(this.intervalTimerCancelID);
+        this.hasEnded = true;
+        
+        for (const onGameEnd of this.onGameEndDelegates) {
+            onGameEnd(result);
+        }
+    }
+
+    // Calls the supplied callback when the game ends.
+    addOnGameEndEventHandler(onGameEnd: GameEndDelegate): void {
+        this.onGameEndDelegates.push(onGameEnd);
+    }
+
+    static togglePlayerRole(role: PlayerRole): PlayerRole {
+        return (role === "p1") ? "p2" : "p1";
     }
 }
 
@@ -276,3 +327,5 @@ function genRandomColorConfig(): ColorConfig {
     // Pick a random config.
     return configs[Math.floor(Math.random() * configs.length)];
 }
+
+

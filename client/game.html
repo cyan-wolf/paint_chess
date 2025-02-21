@@ -37,7 +37,13 @@
                 <div class="board" id="main-board"></div>
             </div>
             <div class="right-area">
-                <div id="remaining-time"></div>
+                <div id="remaining-opponent-time">00:00</div>
+
+                <div id="right-area-center">
+                    <button id="btn-resign">Resign</button>
+                </div>
+
+                <div id="remaining-own-time">00:00</div>
             </div>
         </div>
     </div>
@@ -71,6 +77,19 @@
             }
         }
 
+        function updateTimeSection(timeDesc) {
+            const { ownSecsLeft, opponentSecsLeft } = timeDesc;
+
+            const ownTimeElem = document.getElementById("remaining-own-time");
+            const opponentTimeElem = document.getElementById("remaining-opponent-time");
+
+            // TODO: Format this as MM:SS.
+            // TODO: make this also countdown in the client 
+            // (for display purposes only).
+            ownTimeElem.innerHTML = ownSecsLeft;
+            opponentTimeElem.innerHTML = opponentSecsLeft;
+        }
+
         const socket = io();
         
         window.addEventListener("load", () => {
@@ -93,6 +112,8 @@
 
             updateGameInfoSection(gameData.gameInfo);
 
+            updateTimeSection(gameData.timeDesc);
+
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
                 socket.emit("perform-move", move);
@@ -103,20 +124,29 @@
             globals.board.update(gameData.boardDesc);
             loadPieces();
             updateGameInfoSection(gameData.gameInfo);
+            updateTimeSection(gameData.timeDesc);
+
+            console.log(gameData.timeDesc);
         });
 
         const chatInput = document.getElementById("chat-input");
         chatInput.addEventListener("keyup", ({ key }) => {
             if (key === "Enter") {
+                if (chatInput.value.trim().length === 0) {
+                    return;
+                }
                 socket.emit("chat-publish", { content: chatInput.value });
+                chatInput.value = "";
             }
+        });
+
+        document.getElementById("btn-resign").addEventListener("click", () => {
+            socket.emit("resign");
         });
 
         socket.on("current-chat-history", ({ history }) => {
             const historyElem = document.getElementById("chat-history");
             historyElem.innerHTML = "";
-
-            chatInput.value = "";
 
             for (const message of history) {
                 const { by, content } = message;
@@ -125,6 +155,15 @@
              
                 historyElem.appendChild(messageElement);
             }
+        });
+
+        socket.on("game-ended", ({ result }) => {
+            globals.board.deselectAllSlots();
+            globals.board.clickable = false;
+
+            // Debug.
+            console.log("GAME ENDED");
+            console.log(result);
         });
     </script>
 </body>
