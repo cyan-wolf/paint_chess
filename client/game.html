@@ -57,6 +57,9 @@
     <!-- For having access to the client-side Board class. -->
     <script src="/public/scripts/board.js"></script>
 
+    <!-- For having access to the TimeDisplay class. -->
+    <script src="/public/scripts/time_display.js"></script>
+
     <!-- 
         For initializing the board and wiring up board click events to 
         socket.io to send move data to the server.
@@ -64,6 +67,7 @@
     <script>
         const globals = {
             board: null,
+            timeDisplay: null,
         };
 
         function updateGameInfoSection(gameInfo) {
@@ -77,17 +81,21 @@
             }
         }
 
-        function updateTimeSection(timeDesc) {
-            const { ownSecsLeft, opponentSecsLeft } = timeDesc;
+        function updateClientState(gameData) {
+            // Update the board using a description of the 
+            // current board from the server.
+            globals.board.update(gameData.boardDesc);
 
-            const ownTimeElem = document.getElementById("remaining-own-time");
-            const opponentTimeElem = document.getElementById("remaining-opponent-time");
+            // Load piece SVGs.
+            loadPieces();
 
-            // TODO: Format this as MM:SS.
-            // TODO: make this also countdown in the client 
-            // (for display purposes only).
-            ownTimeElem.innerHTML = ownSecsLeft;
-            opponentTimeElem.innerHTML = opponentSecsLeft;
+            // Updates additional game information, 
+            // such as the current turn, the players' 
+            // usernames and piece colors, etc.
+            updateGameInfoSection(gameData.gameInfo);
+            
+            // Synchronizes the client's time display with the server's.
+            globals.timeDisplay.synchronize(gameData.timeDesc);
         }
 
         const socket = io();
@@ -105,14 +113,15 @@
             };
 
             globals.board = new Board(boardConfig);
-            globals.board.update(gameData.boardDesc);
 
-            // Load piece SVGs.
-            loadPieces();
+            globals.timeDisplay = new TimeDisplay(
+                document.getElementById("remaining-own-time"),
+                document.getElementById("remaining-opponent-time"),
+                gameData.timeDesc,
+            );
 
-            updateGameInfoSection(gameData.gameInfo);
-
-            updateTimeSection(gameData.timeDesc);
+            // Updates all the client's state with data from the server.
+            updateClientState(gameData);
 
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
@@ -121,12 +130,8 @@
         });
 
         socket.on("move-performed-response", (gameData) => {
-            globals.board.update(gameData.boardDesc);
-            loadPieces();
-            updateGameInfoSection(gameData.gameInfo);
-            updateTimeSection(gameData.timeDesc);
-
-            console.log(gameData.timeDesc);
+            // Updates all the client's state with data from the server.
+            updateClientState(gameData);
         });
 
         const chatInput = document.getElementById("chat-input");
@@ -160,6 +165,8 @@
         socket.on("game-ended", ({ result }) => {
             globals.board.deselectAllSlots();
             globals.board.clickable = false;
+
+            globals.timeDisplay.stop();
 
             // Debug.
             console.log("GAME ENDED");

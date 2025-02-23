@@ -40,6 +40,10 @@ type PlayerSpecificGameInfo = {
     color: string,
 };
 
+type PlayerPerspective =
+    | "own"
+    | "opponent";
+
 /**
  * A representation of a game suitable for sending to the 
  * client.
@@ -57,8 +61,10 @@ type GameViewForClient = {
     };
     boardDesc: BoardDescription,
     timeDesc: {
-        ownSecsLeft: number,
-        opponentSecsLeft: number,
+        [perspective in PlayerPerspective]: {
+            secsLeft: number,
+            isTicking: boolean,
+        }
     },
 };
 

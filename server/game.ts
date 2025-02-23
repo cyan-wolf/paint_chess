@@ -5,6 +5,8 @@ export class Game {
     board: Board
     colorConfig: ColorConfig
 
+    completedTurns: number
+
     messageHistory: Message[]
     timeInfo: TimeInfo
     // TODO: Use this ID to cancel the timer started by this game.
@@ -13,10 +15,14 @@ export class Game {
     onGameEndDelegates: GameEndDelegate[]
     hasEnded: boolean
 
+    
+
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
         this.colorConfig = genRandomColorConfig();
+
+        this.completedTurns = 0;
 
         this.messageHistory = [];
 
@@ -86,23 +92,20 @@ export class Game {
     }
 
     asClientView(username: string): GameViewForClient {
-        let isFlipped;
-        let timeDesc;
+        const ownRole = this.userToRole(username);
+        const opponentRole = Game.togglePlayerRole(ownRole);
+        const isFlipped = ownRole !== "p1";
 
-        if (this.userToRole(username) === "p1") {
-            isFlipped = false;
-            timeDesc = {
-                ownSecsLeft: this.timeInfo["p1"].millisLeft / 1000,
-                opponentSecsLeft: this.timeInfo["p2"].millisLeft / 1000,
-            };
-        }
-        else {
-            isFlipped = true;
-            timeDesc = {
-                ownSecsLeft: this.timeInfo["p2"].millisLeft / 1000,
-                opponentSecsLeft: this.timeInfo["p1"].millisLeft / 1000,
-            };
-        }
+        const timeDesc = {
+            "own": {
+                secsLeft: this.timeInfo[ownRole].millisLeft / 1000,
+                isTicking: this.completedTurns > 1 && this.board.turn === ownRole,
+            },
+            "opponent": {
+                secsLeft: this.timeInfo[opponentRole].millisLeft / 1000,
+                isTicking: this.completedTurns > 1 && this.board.turn === opponentRole,
+            },
+        };
 
         const data = {
             gameInfo: {
@@ -168,6 +171,7 @@ export class Game {
         const couldMove = this.board.processMove(move);
 
         if (couldMove) {
+            this.completedTurns++;
             this.toggleTimerCountdown();
         }
 
@@ -231,12 +235,7 @@ export class Game {
         // Detects whether the last move was the first move in the game.
         // This needs to be checked since the timer rules work differently 
         // after the first move.
-        const wasFirstMoveOfTheGame = 
-            lastMovedPlayer === "p1" 
-                && this.timeInfo["p1"].lastTimestamp === null
-                && this.timeInfo["p2"].lastTimestamp === null;
-
-        if (!wasFirstMoveOfTheGame) {
+        if (this.completedTurns > 1) {
             // Switches the user that the timer counts down.
             this.timeInfo[currentPlayer].lastTimestamp = performance.now();
             this.timeInfo[lastMovedPlayer].lastTimestamp = null;
