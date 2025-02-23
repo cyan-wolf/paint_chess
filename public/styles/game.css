@@ -26,10 +26,11 @@ body {
 .left-area {
     display: flex;
     flex-direction: column;
+    width: 20vw;
+    /* width: 20vw; */
 }
 
 #game-info {
-    width: 20vw;
     height: 50%;
     background-color: rgb(75, 75, 75);
     color: white;
@@ -44,7 +45,7 @@ body {
 }
 
 #chat-area {
-    width: 20vw;
+    /* width: 20vw; */
     height: 50%;
     background-color: rgb(92, 92, 92);
 }
@@ -73,12 +74,37 @@ body {
 .right-area {
     display: flex;
     flex-direction: column;
+    width: 20vw;
+    /* background-color: rgb(112, 112, 112); */
 }
 
-#remaining-time {
-    width: 20vw;
-    height: 60%;
-    /* background-color: black; */
+.right-area * {
+    /* 
+        This is to fix a weird bug, where parts of the right area 
+        are selected when trying to move pieces on the board.
+    */
+    user-select: none;
+}
+
+.time-display {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+    width: fit-content;
+    font-size: 60px;
+    height: 15%;
+    background-color: rgb(85, 85, 85);
+}
+
+#right-area-center {
+    background-color: rgb(90, 62, 62);
+    height: 80%;
+}
+
+#btn-resign {
+    width: 100%;
+    font-size: 30px;
 }
 
 .nav {

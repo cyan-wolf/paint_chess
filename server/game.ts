@@ -215,10 +215,6 @@ export class Game {
                         });
                     }
                 }
-
-                // // Debug.
-                // const secsLeft = timeInfo.millisLeft / 1000;
-                // console.log(`${player} has ${secsLeft.toFixed(2)} secs left`);
             }
         }, 500);
         return cancelID;

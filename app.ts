@@ -228,7 +228,7 @@ io.on("connection", (socket) => {
             const game = new Game({
                 p1, p2, gameId,
                 joinedPlayers: 0,
-                secsPerPlayer: 1 * 60,
+                secsPerPlayer: 5 * 60,
                 hasStarted: false,
             });
             activeGamesDb[gameId] = game;
