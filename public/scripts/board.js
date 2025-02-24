@@ -57,6 +57,11 @@ class Board {
 
             // Remember the coordinate of the last clicked slot.
             if (this.lastClickedCoord === null) {
+                // Check if the slot should be selectable.
+                if (!this.slotShouldBeSelectable(chessCoord)) {
+                    return;
+                }
+
                 this.lastClickedCoord = chessCoord;
                 this.selectSlot(chessCoord);
                 return;
@@ -120,6 +125,10 @@ class Board {
     selectSlot(chessCoord) {
         this.deselectAllSlots();
         this.boardPositions[chessCoord].classList.add("selected");
+    }
+
+    slotShouldBeSelectable(chessCoord) {
+        return this.hasPieceAtCoord(chessCoord);
     }
 
     // Updates the board using a board description object.
