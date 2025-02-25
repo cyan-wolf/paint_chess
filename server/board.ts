@@ -3,10 +3,17 @@
 export class Board {
     grid: Slot[][]
     turn: PlayerRole
+    kingCoords: KingCoords
 
     constructor() {
         this.grid = [];
         this.turn = "p1";
+
+        // Placeholder initial value.
+        this.kingCoords = {
+            p1: "",
+            p2: "",
+        };
 
         for (let r = 0; r < 8; r++) {
             const row = [];
@@ -66,7 +73,12 @@ export class Board {
         // Actually moves the piece and fills in the path it "traversed".
         movePiece(newGrid, fromPos, toPos, path);
 
-        // TODO: look for check and checkmate
+        // Look for check.
+        if (this.inCheck(newGrid, this.turn)) {
+            return false;
+        }
+
+        //console.log(this.kingCoords);
 
         // Toggle the turn.
         this.turn = (this.turn === "p1") ? "p2" : "p1";
@@ -74,6 +86,22 @@ export class Board {
         // Update the actual grid.
         this.grid = newGrid;
         return true;
+    }
+
+    // Determines if the given player is in check.
+    inCheck(grid: Slot[][], player: PlayerRole) {
+        const rundown = toBoardRundown(grid);
+
+        console.log(JSON.stringify(rundown, null, 2));
+
+        for (const pieceCoord of Object.keys(rundown[player])) {
+            const kingPos = this.kingCoords[player];
+
+            if (rundown[player][pieceCoord].attacking.has(kingPos)) {
+                return true; // in check
+            }
+        }
+        return false; // not in check
     }
 
     // Clears the board's grid.
@@ -131,6 +159,11 @@ export class Board {
             }
             if (slotDesc.turf !== undefined) {
                 slot.turf = slotDesc.turf;
+            }
+
+            // Save the king positions.
+            if (slot.piece === "king") {
+                this.kingCoords[slot.player!] = chessCoord;
             }
         }
     }
@@ -283,6 +316,67 @@ function pathIsValid(grid: Slot[][], path: Pos[]): boolean {
         }
     }
     return true;
+}
+
+// TODO: implement logic for all the pieces
+function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord> {    
+    const attacking = new Set();
+
+    switch (slot.piece!) {
+        case "pawn":
+            break;
+
+        case "knight": {
+            for (const magnitudes of [[1, 2], [2, 1]]) {
+                for (const directionR of [1, -1]) {
+                    for (const directionC of [1, -1]) {
+                        const dr = magnitudes[0] * directionR;
+                        const dc = magnitudes[1] * directionC;
+
+                        const nbr: Pos = [slotPos[0] + dr, slotPos[1] + dc];
+                        if (posInBounds(nbr)) {
+                            attacking.add(nbr);
+                        }
+                    }
+                }
+            }
+            break;
+        }
+
+        case "bishop":
+            break;
+        case "rook":
+            break;
+        case "queen":
+            break;
+        case "king":
+            break;
+    }
+
+    return new Set();
+}
+
+function toBoardRundown(grid: Slot[][]): BoardRundown {
+    const rundown: BoardRundown = {
+        p1: {},
+        p2: {},
+    };
+    
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const slot = grid[r][c];
+
+            if (slot.piece === null) {
+                continue;
+            }
+            const chessCoord = rowColToChessCoord([r, c]);
+
+            rundown[slot.player!][chessCoord] = {
+                attacking: getAttackingCoords(grid, slot, [r, c]),
+            };
+        }
+    }
+    return rundown;
 }
 
 // Gets a slot from the grid at the given position (without validation).

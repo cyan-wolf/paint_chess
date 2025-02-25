@@ -105,6 +105,7 @@ body {
 #btn-resign {
     width: 100%;
     font-size: 30px;
+    cursor: pointer;
 }
 
 .nav {

@@ -62,3 +62,15 @@ type Move = {
     to: Coord, 
     player: PlayerRole
 };
+
+type KingCoords = {
+    [player in PlayerRole]: Coord
+};
+
+type BoardRundown = {
+    [player in PlayerRole]: {
+        [coord: Coord]: {
+            attacking: Set<Coord>
+        }
+    }
+};

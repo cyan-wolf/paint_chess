@@ -72,7 +72,3 @@ function genSvgPiece(pieceName, color, size) {
             return "";
     }
 }
-
-window.addEventListener("load", (e) => {
-    loadPieces();
-});
