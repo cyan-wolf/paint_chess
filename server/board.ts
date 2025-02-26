@@ -1,3 +1,4 @@
+import { Game } from "./game.ts";
 
 // Server-side board class.
 export class Board {
@@ -75,16 +76,21 @@ export class Board {
 
         // Look for check.
         if (this.inCheck(newGrid, this.turn)) {
+            console.log(`${this.turn} is in check!`);
             return false;
         }
 
-        //console.log(this.kingCoords);
-
         // Toggle the turn.
-        this.turn = (this.turn === "p1") ? "p2" : "p1";
+        this.turn = Game.togglePlayerRole(this.turn);
 
         // Update the actual grid.
         this.grid = newGrid;
+
+        // Check if a king moved (to update its cached position).
+        if (slotToMove.piece === "king") {
+            this.kingCoords[slotToMove.player] = to;
+        }
+
         return true;
     }
 
@@ -92,12 +98,26 @@ export class Board {
     inCheck(grid: Slot[][], player: PlayerRole) {
         const rundown = toBoardRundown(grid);
 
-        console.log(JSON.stringify(rundown, null, 2));
+        // DEBUG:
+        // for (const role of Object.keys(rundown)) {
+        //     console.log(`${role} RUNDOWN: `);
+        //     for (const coord of Object.keys(rundown[role as PlayerRole])) {
+        //         console.log(coord);
+        //         console.log(rundown[role as PlayerRole][coord].attacking);
+        //     }
+        // }
 
-        for (const pieceCoord of Object.keys(rundown[player])) {
-            const kingPos = this.kingCoords[player];
+        //console.log(JSON.stringify(rundown, null, 2));
 
-            if (rundown[player][pieceCoord].attacking.has(kingPos)) {
+        const otherPlayer = Game.togglePlayerRole(player);
+        // console.log(otherPlayer);
+
+        for (const pieceCoord of Object.keys(rundown[otherPlayer])) {
+            const cachedKingCoord = this.kingCoords[player];
+            // TODO: this fails when king was just moved
+            const kingPos = cachedKingCoord;
+
+            if (rundown[otherPlayer][pieceCoord].attacking.has(kingPos)) {
                 return true; // in check
             }
         }
@@ -320,11 +340,25 @@ function pathIsValid(grid: Slot[][], path: Pos[]): boolean {
 
 // TODO: implement logic for all the pieces
 function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord> {    
-    const attacking = new Set();
+    const attacking = new Set<Coord>();
 
     switch (slot.piece!) {
-        case "pawn":
+        case "pawn": {
+            // Moves forward in the "row" direction.
+            const sDr = (slot.player === "p1") ? -1 : 1;
+            
+            const nbrs: Pos[] = [
+                [slotPos[0] + sDr, slotPos[1] + 1],
+                [slotPos[0] + sDr, slotPos[1] - 1],
+            ];
+
+            for (const nbrPos of nbrs) {
+                if (posInBounds(nbrPos) && !isFriendlyCapture(slotPos, nbrPos, grid)) {
+                    attacking.add(rowColToChessCoord(nbrPos));
+                }
+            }
             break;
+        }
 
         case "knight": {
             for (const magnitudes of [[1, 2], [2, 1]]) {
@@ -333,13 +367,15 @@ function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord
                         const dr = magnitudes[0] * directionR;
                         const dc = magnitudes[1] * directionC;
 
-                        const nbr: Pos = [slotPos[0] + dr, slotPos[1] + dc];
-                        if (posInBounds(nbr)) {
-                            attacking.add(nbr);
+                        const nbrPos: Pos = [slotPos[0] + dr, slotPos[1] + dc];
+
+                        if (posInBounds(nbrPos) && !isFriendlyCapture(slotPos, nbrPos, grid)) {
+                            attacking.add(rowColToChessCoord(nbrPos));
                         }
                     }
                 }
             }
+            //console.log("SHOULD BE 8 NBRS before this....");
             break;
         }
 
@@ -349,11 +385,28 @@ function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord
             break;
         case "queen":
             break;
-        case "king":
+        case "king": {
+            const nbrs: Pos[] = [
+                [slotPos[0] + 1, slotPos[1]],
+                [slotPos[0] - 1, slotPos[1]],
+                [slotPos[0], slotPos[1] + 1],
+                [slotPos[0], slotPos[1] - 1],
+
+                [slotPos[0] + 1, slotPos[1] + 1],
+                [slotPos[0] + 1, slotPos[1] - 1],
+                [slotPos[0] - 1, slotPos[1] + 1],
+                [slotPos[0] - 1, slotPos[1] - 1],
+            ];
+            for (const nbrPos of nbrs) {
+                if (posInBounds(nbrPos) && !isFriendlyCapture(slotPos, nbrPos, grid)) {
+                    attacking.add(rowColToChessCoord(nbrPos));
+                }
+            }
             break;
+        }
     }
 
-    return new Set();
+    return attacking;
 }
 
 function toBoardRundown(grid: Slot[][]): BoardRundown {
@@ -370,6 +423,9 @@ function toBoardRundown(grid: Slot[][]): BoardRundown {
                 continue;
             }
             const chessCoord = rowColToChessCoord([r, c]);
+            
+            // const atk = getAttackingCoords(grid, slot, [r, c]);
+            // console.log(atk);
 
             rundown[slot.player!][chessCoord] = {
                 attacking: getAttackingCoords(grid, slot, [r, c]),
