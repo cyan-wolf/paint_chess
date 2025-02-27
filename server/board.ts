@@ -80,7 +80,7 @@ export class Board {
         movePiece(newGridData, fromPos, toPos, path);
 
         // Look for check.
-        if (this.inCheck(newGridData, this.turn)) {
+        if (inCheck(newGridData, this.turn)) {
             console.log(`${this.turn} is in check!`);
             return false;
         }
@@ -92,33 +92,6 @@ export class Board {
         this.gridData = newGridData;
 
         return true;
-    }
-
-    // Determines if the given player is in check.
-    inCheck(gridData: GridData, player: PlayerRole) {
-        const rundown = toBoardRundown(gridData.grid);
-
-        // DEBUG:
-        // for (const role of Object.keys(rundown)) {
-        //     console.log(`${role} RUNDOWN: `);
-        //     for (const coord of Object.keys(rundown[role as PlayerRole])) {
-        //         console.log(coord);
-        //         console.log(rundown[role as PlayerRole][coord].attacking);
-        //     }
-        // }
-
-        //console.log(JSON.stringify(rundown, null, 2));
-
-        const otherPlayer = Game.togglePlayerRole(player);
-
-        for (const pieceCoord of Object.keys(rundown[otherPlayer])) {
-            const kingCoord = gridData.kingCoords[player];
-
-            if (rundown[otherPlayer][pieceCoord].attacking.has(kingCoord)) {
-                return true; // in check
-            }
-        }
-        return false; // not in check
     }
 
     // Clears the board's grid.
@@ -342,7 +315,6 @@ function pathIsValid(grid: Grid, path: Pos[]): boolean {
     return true;
 }
 
-// TODO: implement logic for all the pieces
 function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {    
     const attacking = new Set<Coord>();
 
@@ -379,16 +351,95 @@ function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {
                     }
                 }
             }
-            //console.log("SHOULD BE 8 NBRS before this....");
             break;
         }
 
-        case "bishop":
+        // TODO: Implement "attack stopping" due to enemy turf.
+        case "bishop": {
+            // Diagonal directions.
+            const movements = [
+                [1, 1],
+                [-1, -1],
+                [1, -1],
+                [-1, 1],
+            ];
+
+            for (const movement of movements) {
+                let nbrPos = structuredClone(slotPos);
+
+                while (true) {
+                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
+
+                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
+                        attacking.add(rowColToChessCoord(nbrPos));
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
             break;
-        case "rook":
+        }
+
+        // TODO: Implement "attack stopping" due to enemy turf.
+        case "rook": {
+            // Cardinal directions.
+            const movements = [
+                [1, 0],
+                [-1, 0],
+                [0, 1],
+                [0, -1],
+            ];
+
+            for (const movement of movements) {
+                let nbrPos = structuredClone(slotPos);
+
+                while (true) {
+                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
+
+                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
+                        attacking.add(rowColToChessCoord(nbrPos));
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
+
             break;
-        case "queen":
+        }
+
+        // TODO: Implement "attack stopping" due to enemy turf.
+        case "queen": {
+            // Cardinal and diagonal directions.
+            const movements = [
+                [1, 0],
+                [-1, 0],
+                [0, 1],
+                [0, -1],
+                [1, 1],
+                [-1, -1],
+                [1, -1],
+                [-1, 1],
+            ];
+
+            for (const movement of movements) {
+                let nbrPos = structuredClone(slotPos);
+
+                while (true) {
+                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
+
+                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
+                        attacking.add(rowColToChessCoord(nbrPos));
+                    }
+                    else {
+                        break;
+                    }
+                }
+            }
             break;
+        }
+
         case "king": {
             const nbrs: Pos[] = [
                 [slotPos[0] + 1, slotPos[1]],
@@ -434,6 +485,33 @@ function toBoardRundown(grid: Grid): BoardRundown {
         }
     }
     return rundown;
+}
+
+// Determines if the given player is in check.
+function inCheck(gridData: GridData, player: PlayerRole) {
+    const rundown = toBoardRundown(gridData.grid);
+
+    // DEBUG:
+    for (const role of Object.keys(rundown)) {
+        console.log(`${role} RUNDOWN: `);
+        for (const coord of Object.keys(rundown[role as PlayerRole])) {
+            console.log(coord);
+            console.log(rundown[role as PlayerRole][coord].attacking);
+        }
+    }
+
+    //console.log(JSON.stringify(rundown, null, 2));
+
+    const otherPlayer = Game.togglePlayerRole(player);
+
+    for (const pieceCoord of Object.keys(rundown[otherPlayer])) {
+        const kingCoord = gridData.kingCoords[player];
+
+        if (rundown[otherPlayer][pieceCoord].attacking.has(kingCoord)) {
+            return true; // in check
+        }
+    }
+    return false; // not in check
 }
 
 // Gets a slot from the grid at the given position (without validation).
