@@ -2,29 +2,33 @@ import { Game } from "./game.ts";
 
 // Server-side board class.
 export class Board {
-    grid: Slot[][]
+    gridData: GridData
     turn: PlayerRole
-    kingCoords: KingCoords
 
     constructor() {
-        this.grid = [];
-        this.turn = "p1";
-
-        // Placeholder initial value.
-        this.kingCoords = {
-            p1: "",
-            p2: "",
+        this.gridData = {
+            kingCoords: {
+                // Placeholder initial values.
+                p1: "",
+                p2: "",
+            },
+            grid: [],
         };
+        this.turn = "p1";
 
         for (let r = 0; r < 8; r++) {
             const row = [];
             for (let c = 0; c < 8; c++) {
                 row.push(newEmptySlot());
             }
-            this.grid.push(row);
+            this.getGrid().push(row);
         }
 
         this.loadBoardDesc(genInitialChessBoardDesc());
+    }
+
+    getGrid(): Grid {
+        return this.gridData.grid;
     }
 
     // Processes a move given by the game itself.
@@ -38,9 +42,9 @@ export class Board {
             return false;
         }
 
-        const newGrid = structuredClone(this.grid);
+        const newGridData = structuredClone(this.gridData);
 
-        const slotToMove = newGrid[fromPos[0]][fromPos[1]];
+        const slotToMove = newGridData.grid[fromPos[0]][fromPos[1]];
 
         if (slotToMove.piece === null) {
             // Player should only be able to move pieces.
@@ -56,26 +60,27 @@ export class Board {
         }
 
         // Basic validation for pieces.
-        if (!prelimVerifyMove(fromPos, toPos, newGrid)) {
+        if (!prelimVerifyMove(fromPos, toPos, newGridData.grid)) {
             return false;
         }
 
         // Stops pieces from the same player from capturing each other.
-        if (isFriendlyCapture(fromPos, toPos, newGrid)) {
+        if (isFriendlyCapture(fromPos, toPos, newGridData.grid)) {
             return false;
         }
 
         const path = getInBetweenPositions(fromPos, toPos);
 
-        if (!pathIsValid(newGrid, path)) {
+        if (!pathIsValid(newGridData.grid, path)) {
             return false;
         }
 
         // Actually moves the piece and fills in the path it "traversed".
-        movePiece(newGrid, fromPos, toPos, path);
+        // Updates the cached king position if one moved.
+        movePiece(newGridData, fromPos, toPos, path);
 
         // Look for check.
-        if (this.inCheck(newGrid, this.turn)) {
+        if (this.inCheck(newGridData, this.turn)) {
             console.log(`${this.turn} is in check!`);
             return false;
         }
@@ -83,20 +88,15 @@ export class Board {
         // Toggle the turn.
         this.turn = Game.togglePlayerRole(this.turn);
 
-        // Update the actual grid.
-        this.grid = newGrid;
-
-        // Check if a king moved (to update its cached position).
-        if (slotToMove.piece === "king") {
-            this.kingCoords[slotToMove.player] = to;
-        }
+        // Update the actual grid data.
+        this.gridData = newGridData;
 
         return true;
     }
 
     // Determines if the given player is in check.
-    inCheck(grid: Slot[][], player: PlayerRole) {
-        const rundown = toBoardRundown(grid);
+    inCheck(gridData: GridData, player: PlayerRole) {
+        const rundown = toBoardRundown(gridData.grid);
 
         // DEBUG:
         // for (const role of Object.keys(rundown)) {
@@ -110,14 +110,11 @@ export class Board {
         //console.log(JSON.stringify(rundown, null, 2));
 
         const otherPlayer = Game.togglePlayerRole(player);
-        // console.log(otherPlayer);
 
         for (const pieceCoord of Object.keys(rundown[otherPlayer])) {
-            const cachedKingCoord = this.kingCoords[player];
-            // TODO: this fails when king was just moved
-            const kingPos = cachedKingCoord;
+            const kingCoord = gridData.kingCoords[player];
 
-            if (rundown[otherPlayer][pieceCoord].attacking.has(kingPos)) {
+            if (rundown[otherPlayer][pieceCoord].attacking.has(kingCoord)) {
                 return true; // in check
             }
         }
@@ -128,7 +125,7 @@ export class Board {
     clearGrid() {
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
-                this.grid[r][c] = newEmptySlot();
+                this.getGrid()[r][c] = newEmptySlot();
             }
         }
     }
@@ -139,7 +136,7 @@ export class Board {
 
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
-                const gridSlot = this.grid[r][c];
+                const gridSlot = this.getGrid()[r][c];
                 const slot: SlotDescription = {};
 
                 if (gridSlot.piece != null) {
@@ -168,7 +165,7 @@ export class Board {
         for (const chessCoord of Object.keys(boardDesc)) {
             const [row, col] = chessCoordToRowCol(chessCoord);
 
-            const slot = this.grid[row][col];
+            const slot = this.getGrid()[row][col];
             const slotDesc = boardDesc[chessCoord];
 
             if (slotDesc.piece !== undefined) {
@@ -183,7 +180,7 @@ export class Board {
 
             // Save the king positions.
             if (slot.piece === "king") {
-                this.kingCoords[slot.player!] = chessCoord;
+                this.gridData.kingCoords[slot.player!] = chessCoord;
             }
         }
     }
@@ -250,7 +247,9 @@ function getInBetweenPositions(fromPos: Pos, toPos: Pos): Pos[] {
 // Moves a piece (without validation) and colors the piece's path.
 // The piece's path includes all the slots that the piece "traversed",
 // excluding the final position.
-function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]) {
+// Updates the cached king position if one moved.
+function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: Pos[]) {
+    const grid = gridData.grid;
     const slotToMove = grid[fromPos[0]][fromPos[1]];
 
     // Fills in the piece's path with the same color turf.
@@ -263,10 +262,15 @@ function movePiece(grid: Slot[][], fromPos: Pos, toPos: Pos, piecePosPath: Pos[]
     }
 
     grid[toPos[0]][toPos[1]] = slotToMove;
+
+    // Updates the cached king position (if one moved).
+    if (slotToMove.piece === "king") {
+        gridData.kingCoords[slotToMove.player!] = rowColToChessCoord(toPos);
+    }
 }
 
 // Does basic (preliminary) validation for pieces.
-function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
+function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
     const dr = Math.abs(toPos[0] - fromPos[0]);
     const dc = Math.abs(toPos[1] - fromPos[1]);
 
@@ -316,11 +320,11 @@ function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
 }
 
 // Determines whether the specified move would result in a friendly capture.
-function isFriendlyCapture(fromPos: Pos, toPos: Pos, grid: Slot[][]): boolean {
+function isFriendlyCapture(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
     return getSlot(grid, fromPos).player === getSlot(grid, toPos).player;
 }
 
-function pathIsValid(grid: Slot[][], path: Pos[]): boolean {
+function pathIsValid(grid: Grid, path: Pos[]): boolean {
     const slotToMove = getSlot(grid, path[0]);
 
     for (const pos of path.slice(1)) {
@@ -339,7 +343,7 @@ function pathIsValid(grid: Slot[][], path: Pos[]): boolean {
 }
 
 // TODO: implement logic for all the pieces
-function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord> {    
+function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {    
     const attacking = new Set<Coord>();
 
     switch (slot.piece!) {
@@ -409,7 +413,7 @@ function getAttackingCoords(grid: Slot[][], slot: Slot, slotPos: Pos): Set<Coord
     return attacking;
 }
 
-function toBoardRundown(grid: Slot[][]): BoardRundown {
+function toBoardRundown(grid: Grid): BoardRundown {
     const rundown: BoardRundown = {
         p1: {},
         p2: {},
@@ -423,9 +427,6 @@ function toBoardRundown(grid: Slot[][]): BoardRundown {
                 continue;
             }
             const chessCoord = rowColToChessCoord([r, c]);
-            
-            // const atk = getAttackingCoords(grid, slot, [r, c]);
-            // console.log(atk);
 
             rundown[slot.player!][chessCoord] = {
                 attacking: getAttackingCoords(grid, slot, [r, c]),
@@ -436,7 +437,7 @@ function toBoardRundown(grid: Slot[][]): BoardRundown {
 }
 
 // Gets a slot from the grid at the given position (without validation).
-function getSlot(grid: Slot[][], pos: Pos): Slot {
+function getSlot(grid: Grid, pos: Pos): Slot {
     return grid[pos[0]][pos[1]];
 }
 

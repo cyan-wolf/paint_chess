@@ -47,6 +47,17 @@ type SlotDescription = {
     turf?: PlayerRole,
 };
 
+type Grid = Slot[][];
+
+type KingCoords = {
+    [player in PlayerRole]: Coord
+};
+
+type GridData = {
+    kingCoords: KingCoords,
+    grid: Grid,
+};
+
 /**
  * Represents a map of chess coordinates to their contents.
  */
@@ -61,10 +72,6 @@ type Move = {
     from: Coord, 
     to: Coord, 
     player: PlayerRole
-};
-
-type KingCoords = {
-    [player in PlayerRole]: Coord
 };
 
 type BoardRundown = {
