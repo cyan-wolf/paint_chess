@@ -315,7 +315,46 @@ function pathIsValid(grid: Grid, path: Pos[]): boolean {
     return true;
 }
 
-function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {    
+// Fills in the "attacking coords" hash set with the coordinates 
+// attacked by the long range piece at `slotPos`.
+// Uses the `movements` list to know what directions to go in 
+// when calculating long-distance attacks.
+function longRangeFillInAttackingCoords(
+    movements: Pos[],
+    slotPos: Pos,
+    attacking: Set<Coord>,
+    grid: Grid,
+) {
+    const slot = getSlot(grid, slotPos);
+
+    for (const [dr, dc] of movements) {
+        let nbrPos = structuredClone(slotPos);
+        let foundEnemyTurf = false;
+
+        while (true) {
+            nbrPos = [nbrPos[0] + dr, nbrPos[1] + dc];
+
+            // Stop the long-range attack (in the current direction) if: 
+            // - would reach out of bounds
+            // - would traverse more than 1 enemy turf slot
+            // - would capture a friendly piece
+            if (!posInBounds(nbrPos) || foundEnemyTurf || isFriendlyCapture(slotPos, nbrPos, grid)) {
+                break;
+            }
+
+            attacking.add(rowColToChessCoord(nbrPos));
+
+            if (nbrSlotHasEnemyTurf(slot, nbrPos, grid)) {
+                // Prevents the piece from moving past this slot 
+                // (it still can move *into* this slot).
+                foundEnemyTurf = true;
+            }
+        }
+    }
+}
+
+function getAttackingCoords(grid: Grid, slotPos: Pos): Set<Coord> {    
+    const slot = getSlot(grid, slotPos);
     const attacking = new Set<Coord>();
 
     switch (slot.piece!) {
@@ -354,65 +393,34 @@ function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {
             break;
         }
 
-        // TODO: Implement "attack stopping" due to enemy turf.
         case "bishop": {
             // Diagonal directions.
-            const movements = [
+            const movements: Pos[] = [
                 [1, 1],
                 [-1, -1],
                 [1, -1],
                 [-1, 1],
             ];
 
-            for (const movement of movements) {
-                let nbrPos = structuredClone(slotPos);
-
-                while (true) {
-                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
-
-                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
-                        attacking.add(rowColToChessCoord(nbrPos));
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
+            longRangeFillInAttackingCoords(movements, slotPos, attacking, grid);
             break;
         }
 
-        // TODO: Implement "attack stopping" due to enemy turf.
         case "rook": {
             // Cardinal directions.
-            const movements = [
+            const movements: Pos[] = [
                 [1, 0],
                 [-1, 0],
                 [0, 1],
                 [0, -1],
             ];
-
-            for (const movement of movements) {
-                let nbrPos = structuredClone(slotPos);
-
-                while (true) {
-                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
-
-                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
-                        attacking.add(rowColToChessCoord(nbrPos));
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
-
+            longRangeFillInAttackingCoords(movements, slotPos, attacking, grid);
             break;
         }
 
-        // TODO: Implement "attack stopping" due to enemy turf.
         case "queen": {
             // Cardinal and diagonal directions.
-            const movements = [
+            const movements: Pos[] = [
                 [1, 0],
                 [-1, 0],
                 [0, 1],
@@ -423,20 +431,7 @@ function getAttackingCoords(grid: Grid, slot: Slot, slotPos: Pos): Set<Coord> {
                 [-1, 1],
             ];
 
-            for (const movement of movements) {
-                let nbrPos = structuredClone(slotPos);
-
-                while (true) {
-                    nbrPos = [nbrPos[0] + movement[0], nbrPos[1] + movement[1]];
-
-                    if (posInBounds(nbrPos) && getSlot(grid, nbrPos).piece !== null) {
-                        attacking.add(rowColToChessCoord(nbrPos));
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
+            longRangeFillInAttackingCoords(movements, slotPos, attacking, grid);
             break;
         }
 
@@ -480,7 +475,7 @@ function toBoardRundown(grid: Grid): BoardRundown {
             const chessCoord = rowColToChessCoord([r, c]);
 
             rundown[slot.player!][chessCoord] = {
-                attacking: getAttackingCoords(grid, slot, [r, c]),
+                attacking: getAttackingCoords(grid, [r, c]),
             };
         }
     }
@@ -495,7 +490,7 @@ function inCheck(gridData: GridData, player: PlayerRole) {
     for (const role of Object.keys(rundown)) {
         console.log(`${role} RUNDOWN: `);
         for (const coord of Object.keys(rundown[role as PlayerRole])) {
-            console.log(coord);
+            console.log(`${coord}: ${getSlot(gridData.grid, chessCoordToRowCol(coord)).piece}`);
             console.log(rundown[role as PlayerRole][coord].attacking);
         }
     }
@@ -517,6 +512,11 @@ function inCheck(gridData: GridData, player: PlayerRole) {
 // Gets a slot from the grid at the given position (without validation).
 function getSlot(grid: Grid, pos: Pos): Slot {
     return grid[pos[0]][pos[1]];
+}
+
+// Determines whether the slot at `nbrPos` has turf different from the piece in `slot`.
+function nbrSlotHasEnemyTurf(slot: Slot, nbrPos: Pos, grid: Grid) {
+    return getSlot(grid, nbrPos).turf === Game.togglePlayerRole(slot.player!);
 }
 
 function newEmptySlot(): Slot {
