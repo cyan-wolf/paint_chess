@@ -33,55 +33,13 @@ export class Board {
 
     // Processes a move given by the game itself.
     processMove(move: Move): boolean {
-        const { from, to, player } = move;
-
-        const fromPos = chessCoordToRowCol(from);
-        const toPos = chessCoordToRowCol(to);
-
-        if (!posInBounds(fromPos) || !posInBounds(toPos)) {
-            return false;
-        }
-
         const newGridData = structuredClone(this.gridData);
 
-        const slotToMove = newGridData.grid[fromPos[0]][fromPos[1]];
+        // Performs a move on a clone of the current grid's data.
+        const couldMove = performVirtualMove(move, this.turn, newGridData);
 
-        if (slotToMove.piece === null) {
-            // Player should only be able to move pieces.
-            return false;
-        }
-        else if (slotToMove.player !== player) {
-            // Player should only be able to move their own pieces.
-            return false;
-        }
-        else if (slotToMove.player !== this.turn) {
-            // Player should only be able to move on their turn.
-            return false;
-        }
-
-        // Basic validation for pieces.
-        if (!prelimVerifyMove(fromPos, toPos, newGridData.grid)) {
-            return false;
-        }
-
-        // Stops pieces from the same player from capturing each other.
-        if (isFriendlyCapture(fromPos, toPos, newGridData.grid)) {
-            return false;
-        }
-
-        const path = getInBetweenPositions(fromPos, toPos);
-
-        if (!pathIsValid(newGridData.grid, path)) {
-            return false;
-        }
-
-        // Actually moves the piece and fills in the path it "traversed".
-        // Updates the cached king position if one moved.
-        movePiece(newGridData, fromPos, toPos, path);
-
-        // Look for check.
-        if (inCheck(newGridData, this.turn)) {
-            console.log(`${this.turn} is in check!`);
+        // If the move couldn't be performed then return.
+        if (!couldMove) {
             return false;
         }
 
@@ -157,6 +115,66 @@ export class Board {
             }
         }
     }
+}
+
+// Performs the specified move on the given grid data object.
+function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): boolean {
+    const { from, to, player } = move;
+
+    const fromPos = chessCoordToRowCol(from);
+        const toPos = chessCoordToRowCol(to);
+
+        if (!posInBounds(fromPos) || !posInBounds(toPos)) {
+            return false;
+        }
+
+        const slotToMove = gridData.grid[fromPos[0]][fromPos[1]];
+
+        if (slotToMove.piece === null) {
+            // Player should only be able to move pieces.
+            return false;
+        }
+        else if (slotToMove.player !== player) {
+            // Player should only be able to move their own pieces.
+            return false;
+        }
+        else if (slotToMove.player !== turn) {
+            // Player should only be able to move on their turn.
+            return false;
+        }
+
+        // Basic validation for pieces.
+        if (!prelimVerifyMove(fromPos, toPos, gridData.grid)) {
+            return false;
+        }
+
+        // Stops pieces from the same player from capturing each other.
+        if (isFriendlyCapture(fromPos, toPos, gridData.grid)) {
+            return false;
+        }
+
+        const path = getInBetweenPositions(fromPos, toPos);
+
+        if (!pathIsValid(gridData.grid, path)) {
+            return false;
+        }
+
+        // Actually moves the piece and fills in the path it "traversed".
+        // Updates the cached king position if one moved.
+        movePiece(gridData, fromPos, toPos, path);
+
+        // Look for check.
+        if (inCheck(gridData, turn)) {
+            console.log(`${turn} is in check!`);
+            return false;
+        }
+
+        if (inStalemate(gridData, Game.togglePlayerRole(player))) {
+            // TODO: end game as a stalemate
+            console.log("STALEMATE");
+        }
+
+    return true;
 }
 
 // Converts a chess coordinate string into a row/column pair.
@@ -487,15 +505,13 @@ function inCheck(gridData: GridData, player: PlayerRole) {
     const rundown = toBoardRundown(gridData.grid);
 
     // DEBUG:
-    for (const role of Object.keys(rundown)) {
-        console.log(`${role} RUNDOWN: `);
-        for (const coord of Object.keys(rundown[role as PlayerRole])) {
-            console.log(`${coord}: ${getSlot(gridData.grid, chessCoordToRowCol(coord)).piece}`);
-            console.log(rundown[role as PlayerRole][coord].attacking);
-        }
-    }
-
-    //console.log(JSON.stringify(rundown, null, 2));
+    // for (const role of Object.keys(rundown)) {
+    //     console.log(`${role} RUNDOWN: `);
+    //     for (const coord of Object.keys(rundown[role as PlayerRole])) {
+    //         console.log(`${coord}: ${getSlot(gridData.grid, chessCoordToRowCol(coord)).piece}`);
+    //         console.log(rundown[role as PlayerRole][coord].attacking);
+    //     }
+    // }
 
     const otherPlayer = Game.togglePlayerRole(player);
 
@@ -507,6 +523,41 @@ function inCheck(gridData: GridData, player: PlayerRole) {
         }
     }
     return false; // not in check
+}
+
+// Determines whether the given player can perform any moves without being in check.
+// If there are no possible moves, then there is a stalemate.
+function inStalemate(gridData: GridData, player: PlayerRole): boolean {
+    // TODO: ...
+    return false;
+
+    const rundown = toBoardRundown(gridData.grid);
+    const otherPlayer = Game.togglePlayerRole(player);
+    const ownKingCoord = gridData.kingCoords[player];
+
+    for (const ownPieceCoord of Object.keys(rundown[player])) {
+        const possibleOwnMoves = rundown[player][ownPieceCoord].attacking;
+
+        for (const opponentPieceCoord of Object.keys(rundown[otherPlayer])) {
+            const opponentMoves = rundown[otherPlayer][opponentPieceCoord].attacking;
+
+            if (opponentMoves.has(ownKingCoord)) {
+                const possibleValidMoves = 
+                    possibleOwnMoves
+                        .intersection(opponentMoves
+                        .union(new Set(opponentPieceCoord)))
+
+                // If there is at least a valid move, then the 
+                // current player is not in stalemate.
+                if (possibleValidMoves.size > 0) {
+                    return false;
+                }
+            }
+        }
+    }
+
+    // The player was in stalemate.
+    return false;
 }
 
 // Gets a slot from the grid at the given position (without validation).
