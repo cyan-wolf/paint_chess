@@ -25,6 +25,7 @@ export class Board {
         }
 
         this.loadBoardDesc(genInitialChessBoardDesc());
+        //this.loadBoardDesc(genTestBoardDesc());
     }
 
     getGrid(): Grid {
@@ -38,6 +39,12 @@ export class Board {
         // Performs a move on a clone of the current grid's data.
         const couldMove = performVirtualMove(move, this.turn, newGridData);
 
+        // // TODO: find a better place to put this verification
+        // if (outOfLegalMoves(this.gridData, this.turn)) {
+        //     // TODO: wire this to the `Game` class so that the game itself ends.
+        //     console.log(`${this.turn} ran out of moves; game ends by stalemate`);
+        // }
+
         // If the move couldn't be performed then return.
         if (!couldMove) {
             return false;
@@ -48,6 +55,29 @@ export class Board {
 
         // Update the actual grid data.
         this.gridData = newGridData;
+
+        // Debug:
+        // Gen the other player's legal moves.
+        console.log(`${this.turn} legal moves: `, genLegalMoves(this.gridData, this.turn));
+
+        // Verify if the other player is in check (for alerting the players of the check).
+        const otherPlayerChecked = inCheck(this.gridData, this.turn);
+        const otherPlayerMoveless = outOfLegalMoves(this.gridData, this.turn);
+
+        if (otherPlayerChecked && otherPlayerMoveless) {
+            // TODO: wire this to the `Game` class so that the game itself ends.
+            const winningPlayer = Game.togglePlayerRole(this.turn);
+            console.log(`${winningPlayer} wins by checkmate!`);
+        }
+
+        if (otherPlayerChecked) {
+            // TODO: wire this to the `Game` class so that the client knows about the check too.
+            console.log(`${this.turn} now is in check!`);
+        }
+        else if (otherPlayerMoveless) {
+            // TODO: wire this to the `Game` class so that the game itself ends.
+            console.log(`${this.turn} ran out of moves; game ends by stalemate`);
+        }
 
         return true;
     }
@@ -122,57 +152,52 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
     const { from, to, player } = move;
 
     const fromPos = chessCoordToRowCol(from);
-        const toPos = chessCoordToRowCol(to);
+    const toPos = chessCoordToRowCol(to);
 
-        if (!posInBounds(fromPos) || !posInBounds(toPos)) {
-            return false;
-        }
+    if (!posInBounds(fromPos) || !posInBounds(toPos)) {
+        return false;
+    }
 
-        const slotToMove = gridData.grid[fromPos[0]][fromPos[1]];
+    const slotToMove = gridData.grid[fromPos[0]][fromPos[1]];
 
-        if (slotToMove.piece === null) {
-            // Player should only be able to move pieces.
-            return false;
-        }
-        else if (slotToMove.player !== player) {
-            // Player should only be able to move their own pieces.
-            return false;
-        }
-        else if (slotToMove.player !== turn) {
-            // Player should only be able to move on their turn.
-            return false;
-        }
+    if (slotToMove.piece === null) {
+        // Player should only be able to move pieces.
+        return false;
+    }
+    else if (slotToMove.player !== player) {
+        // Player should only be able to move their own pieces.
+        return false;
+    }
+    else if (slotToMove.player !== turn) {
+        // Player should only be able to move on their turn.
+        return false;
+    }
 
-        // Basic validation for pieces.
-        if (!prelimVerifyMove(fromPos, toPos, gridData.grid)) {
-            return false;
-        }
+    // Basic validation for pieces.
+    if (!prelimVerifyMove(fromPos, toPos, gridData.grid)) {
+        return false;
+    }
 
-        // Stops pieces from the same player from capturing each other.
-        if (isFriendlyCapture(fromPos, toPos, gridData.grid)) {
-            return false;
-        }
+    // Stops pieces from the same player from capturing each other.
+    if (isFriendlyCapture(fromPos, toPos, gridData.grid)) {
+        return false;
+    }
 
-        const path = getInBetweenPositions(fromPos, toPos);
+    const path = getInBetweenPositions(fromPos, toPos);
 
-        if (!pathIsValid(gridData.grid, path)) {
-            return false;
-        }
+    if (!pathIsValid(gridData.grid, path)) {
+        return false;
+    }
 
-        // Actually moves the piece and fills in the path it "traversed".
-        // Updates the cached king position if one moved.
-        movePiece(gridData, fromPos, toPos, path);
+    // Actually moves the piece and fills in the path it "traversed".
+    // Updates the cached king position if one moved.
+    movePiece(gridData, fromPos, toPos, path);
 
-        // Look for check.
-        if (inCheck(gridData, turn)) {
-            console.log(`${turn} is in check!`);
-            return false;
-        }
-
-        if (inStalemate(gridData, Game.togglePlayerRole(player))) {
-            // TODO: end game as a stalemate
-            console.log("STALEMATE");
-        }
+    //Look for check.
+    if (inCheck(gridData, turn)) {
+        //console.log(move, `would cause ${turn} to be in check!`);
+        return false;
+    }
 
     return true;
 }
@@ -525,39 +550,69 @@ function inCheck(gridData: GridData, player: PlayerRole) {
     return false; // not in check
 }
 
-// Determines whether the given player can perform any moves without being in check.
-// If there are no possible moves, then there is a stalemate.
-function inStalemate(gridData: GridData, player: PlayerRole): boolean {
-    // TODO: ...
-    return false;
+function genPossibleLandingCoords(pieceCoord: Coord, player: PlayerRole, grid: Grid, rundown: BoardRundown): Set<Coord> {
+    const piecePos = chessCoordToRowCol(pieceCoord);
+    const slot = getSlot(grid, piecePos);
+
+    let possibleOwnLandingCoords: Set<Coord>;
+
+    switch (slot.piece!) {
+        case "pawn": {
+            const sDr = (player === "p1") ? -1 : 1;
+            const possibleLandingPositions = [
+                // Move forward by 1 or 2 slots.
+                [piecePos[0] + sDr, piecePos[1]],
+                [piecePos[0] + 2 * sDr, piecePos[1]],
+
+                // Diagonal movement (would only be valid 
+                // if it resulted in a capture).
+                [piecePos[0] + sDr, piecePos[1] + 1],
+                [piecePos[0] + sDr, piecePos[1] - 1],
+            ];
+
+            possibleOwnLandingCoords = new Set();
+
+            for (const landingPos of possibleLandingPositions) {
+                possibleOwnLandingCoords.add(rowColToChessCoord(landingPos as Pos));
+            }  
+            break;
+        }
+
+        default:
+            possibleOwnLandingCoords = rundown[player][pieceCoord].attacking;
+            break;
+    }
+    return possibleOwnLandingCoords;
+}
+
+function genLegalMoves(gridData: GridData, player: PlayerRole): Move[] {
+    const moves: Move[] = [];
 
     const rundown = toBoardRundown(gridData.grid);
-    const otherPlayer = Game.togglePlayerRole(player);
-    const ownKingCoord = gridData.kingCoords[player];
 
     for (const ownPieceCoord of Object.keys(rundown[player])) {
-        const possibleOwnMoves = rundown[player][ownPieceCoord].attacking;
+        const possibleOwnLandingCoords = genPossibleLandingCoords(ownPieceCoord, player, gridData.grid, rundown);
 
-        for (const opponentPieceCoord of Object.keys(rundown[otherPlayer])) {
-            const opponentMoves = rundown[otherPlayer][opponentPieceCoord].attacking;
+        for (const landingCoord of possibleOwnLandingCoords) {
+            const move: Move = {
+                from: ownPieceCoord,
+                to: landingCoord,
+                player,
+            };
 
-            if (opponentMoves.has(ownKingCoord)) {
-                const possibleValidMoves = 
-                    possibleOwnMoves
-                        .intersection(opponentMoves
-                        .union(new Set(opponentPieceCoord)))
-
-                // If there is at least a valid move, then the 
-                // current player is not in stalemate.
-                if (possibleValidMoves.size > 0) {
-                    return false;
-                }
+            const couldMove = performVirtualMove(move, player, structuredClone(gridData));
+            if (couldMove) {
+                moves.push(move);
             }
         }
     }
+    return moves;
+}
 
-    // The player was in stalemate.
-    return false;
+// Determines whether the given player can perform any moves without being in check.
+// If there are no legal moves, then there is a stalemate.
+function outOfLegalMoves(gridData: GridData, player: PlayerRole): boolean {
+    return genLegalMoves(gridData, player).length === 0;
 }
 
 // Gets a slot from the grid at the given position (without validation).
@@ -683,5 +738,93 @@ function genInitialChessBoardDesc(): BoardDescription {
         };
     }
 
+    return boardDesc;
+}
+
+function genTestBoardDesc(): BoardDescription {
+    const boardDesc: BoardDescription = {
+        // First player's side.
+        "a1": {
+            piece: "rook",
+            player: "p1",
+            turf: "p1",
+        },
+        // "b1": {
+        //     piece: "knight",
+        //     player: "p1",
+        //     turf: "p1",
+        // },
+        // "c1": {
+        //     piece: "bishop",
+        //     player: "p1",
+        //     turf: "p1",
+        // },
+        "d1": {
+            piece: "queen",
+            player: "p1",
+            turf: "p1",
+        },
+        "e1": {
+            piece: "king",
+            player: "p1",
+            turf: "p1",
+        },
+        // "f1": {
+        //     piece: "bishop",
+        //     player: "p1",
+        //     turf: "p1",
+        // },
+        // "g1": {
+        //     piece: "knight",
+        //     player: "p1",
+        //     turf: "p1",
+        // },
+        "h1": {
+            piece: "rook",
+            player: "p1",
+            turf: "p1",
+        },
+        // Second player's side.
+        // "a8": {
+        //     piece: "rook",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        // "b8": {
+        //     piece: "knight",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        // "c8": {
+        //     piece: "bishop",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        // "d8": {
+        //     piece: "queen",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        "e8": {
+            piece: "king",
+            player: "p2",
+            turf: "p2",
+        },
+        // "f8": {
+        //     piece: "bishop",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        // "g8": {
+        //     piece: "knight",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+        // "h8": {
+        //     piece: "rook",
+        //     player: "p2",
+        //     turf: "p2",
+        // },
+    };
     return boardDesc;
 }
