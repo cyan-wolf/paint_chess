@@ -9,17 +9,16 @@ export class Game {
 
     messageHistory: Message[]
     timeInfo: TimeInfo
-    // TODO: Use this ID to cancel the timer started by this game.
+    // Used to cancel the timer started by this game.
     intervalTimerCancelID: number
 
     onGameEndDelegates: GameEndDelegate[]
     hasEnded: boolean
 
-    
-
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
+
         this.colorConfig = genRandomColorConfig();
 
         this.completedTurns = 0;
@@ -41,6 +40,33 @@ export class Game {
 
         this.onGameEndDelegates = [];
         this.hasEnded = false;
+
+        // Wire events emitted from the board to the game.
+        this.wireBoardEvents();
+    }
+
+    // Connects board events (such as when checkmate or stalemate happen) to the game.
+    wireBoardEvents() {
+        this.board.addBoardEventListener((boardEvent) => {
+            switch (boardEvent.kind) {
+                case "check_alert":
+                    // TODO: notify the client of the check somehow
+                    console.log(`${boardEvent.who} is in check at ${boardEvent.kingCoord}`);
+                    break;
+                case "stalemate":
+                    this.finish({
+                        method: "stalemate",
+                        winner: null,
+                    });
+                    break;
+                case "checkmate":
+                    this.finish({
+                        method: "checkmate",
+                        winner: boardEvent.by
+                    });
+                    break;
+            }
+        });
     }
 
     id() {

@@ -5,6 +5,8 @@ export class Board {
     gridData: GridData
     turn: PlayerRole
 
+    boardEventListeners: BoardEventListener[]
+
     constructor() {
         this.gridData = {
             kingCoords: {
@@ -16,6 +18,8 @@ export class Board {
         };
         this.turn = "p1";
 
+        this.boardEventListeners = [];
+
         for (let r = 0; r < 8; r++) {
             const row = [];
             for (let c = 0; c < 8; c++) {
@@ -24,8 +28,8 @@ export class Board {
             this.getGrid().push(row);
         }
 
-        this.loadBoardDesc(genInitialChessBoardDesc());
-        //this.loadBoardDesc(genTestBoardDesc());
+        //this.loadBoardDesc(genInitialChessBoardDesc());
+        this.loadBoardDesc(genTestBoardDesc());
     }
 
     getGrid(): Grid {
@@ -38,12 +42,6 @@ export class Board {
 
         // Performs a move on a clone of the current grid's data.
         const couldMove = performVirtualMove(move, this.turn, newGridData);
-
-        // // TODO: find a better place to put this verification
-        // if (outOfLegalMoves(this.gridData, this.turn)) {
-        //     // TODO: wire this to the `Game` class so that the game itself ends.
-        //     console.log(`${this.turn} ran out of moves; game ends by stalemate`);
-        // }
 
         // If the move couldn't be performed then return.
         if (!couldMove) {
@@ -65,18 +63,25 @@ export class Board {
         const otherPlayerMoveless = outOfLegalMoves(this.gridData, this.turn);
 
         if (otherPlayerChecked && otherPlayerMoveless) {
-            // TODO: wire this to the `Game` class so that the game itself ends.
             const winningPlayer = Game.togglePlayerRole(this.turn);
-            console.log(`${winningPlayer} wins by checkmate!`);
+
+            this.emitBoardEvent({
+                kind: "checkmate",
+                by: winningPlayer,
+            });
         }
 
         if (otherPlayerChecked) {
-            // TODO: wire this to the `Game` class so that the client knows about the check too.
-            console.log(`${this.turn} now is in check!`);
+            const checkedPlayer = this.turn;
+
+            this.emitBoardEvent({ 
+                kind: "check_alert", 
+                who: checkedPlayer, 
+                kingCoord: this.gridData.kingCoords[checkedPlayer],
+            });
         }
         else if (otherPlayerMoveless) {
-            // TODO: wire this to the `Game` class so that the game itself ends.
-            console.log(`${this.turn} ran out of moves; game ends by stalemate`);
+            this.emitBoardEvent({ kind: "stalemate" });
         }
 
         return true;
@@ -143,6 +148,19 @@ export class Board {
             if (slot.piece === "king") {
                 this.gridData.kingCoords[slot.player!] = chessCoord;
             }
+        }
+    }
+
+    // Wires a board event listener to the board.
+    addBoardEventListener(onBoardEvent: BoardEventListener) {
+        this.boardEventListeners.push(onBoardEvent);
+    }
+
+    // Emits a board event; used for notifying the game of 
+    // check, stalemate, and checkmate.
+    emitBoardEvent(event: BoardEvent) {
+        for (const onBoardEvent of this.boardEventListeners) {
+            onBoardEvent(event);
         }
     }
 }

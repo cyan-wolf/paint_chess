@@ -9,7 +9,7 @@ class TimeDisplay {
         // Ticks down the timer (if needed) on the client, 
         // to avoid having to ping the server constantly for the 
         // current game time.
-        setInterval(() => {
+        this.intervelCancelID = setInterval(() => {
             for (const perspective of Object.keys(this.localTimeDesc)) {
                 const localTimeDesc = this.localTimeDesc[perspective];
 
@@ -43,6 +43,7 @@ class TimeDisplay {
         for (const perspective of Object.keys(this.localTimeDesc)) {
             this.localTimeDesc[perspective].isTicking = false;
         }
+        clearInterval(this.intervelCancelID);
     }
 }
 

@@ -235,7 +235,7 @@ io.on("connection", (socket) => {
 
             game.addOnGameEndEventHandler((result) => {
                 console.log("game ended!");
-                console.log(`reason: ${result.method}; won by ${result.winner}`);
+                console.log(result);
 
                 for (const usernameInGame of game.getUsers()) {
                     const gameData = game.asClientView(usernameInGame);

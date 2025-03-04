@@ -156,3 +156,10 @@ body {
     display: flex;
     flex-direction: column;
 }
+
+#game-result {
+    font-size: 25px;
+    text-align: center;
+    font-weight: bold;
+    font-style: italic;
+}

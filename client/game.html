@@ -19,10 +19,10 @@
             <div class="left-area">
                 <div id="game-info">
                     <div id="game-info-p1">
-                        <span class="dot"></span><span></span>
+                        <span class="dot"></span><span title="Player 1"></span>
                     </div>
                     <div id="game-info-p2">
-                        <span class="dot"></span><span></span>
+                        <span class="dot"></span><span title="Player 2"></span>
                     </div>
                     <div id="game-info-turn">
                         Turn: <span class="dot"></span><span></span>
@@ -41,6 +41,7 @@
 
                 <div id="right-area-center">
                     <button id="btn-resign">Resign</button>
+                    <div id="game-result"></div>
                 </div>
 
                 <div class="time-display" id="remaining-own-time">00:00</div>
@@ -96,6 +97,32 @@
             
             // Synchronizes the client's time display with the server's.
             globals.timeDisplay.synchronize(gameData.timeDesc);
+        }
+
+        function makeFirstUppercase(word) {
+            return word[0].toUpperCase() + word.slice(1);
+        }
+
+        function playerRoleToLongForm(playerRole) {
+            switch (playerRole) {
+                case "p1":
+                    return "Player 1";
+
+                case "p2":
+                    return "Player 2";
+
+                default:
+                    return playerRole;
+            }
+        }
+
+        // Fills in the result text after the game ends.
+        function fillInResultText(result) {
+            let resultText = makeFirstUppercase(result.method);
+            if (result.winner !== null) {
+                resultText += ` • ${playerRoleToLongForm(result.winner)} wins`;
+            }
+            document.getElementById("game-result").innerHTML = resultText;
         }
 
         const socket = io();
@@ -168,9 +195,8 @@
 
             globals.timeDisplay.stop();
 
-            // Debug.
-            console.log("GAME ENDED");
-            console.log(result);
+            // Fill in the result text.
+            fillInResultText(result);
         });
     </script>
 </body>
