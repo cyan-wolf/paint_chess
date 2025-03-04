@@ -48,6 +48,8 @@
             </div>
         </div>
     </div>
+    <!-- Audio for piece move sound. -->
+    <audio id="audio-move" src="/public/audio/sfx/Move.mp3"></audio>
 
     <!-- For client-side socket.io connection. -->
     <script src="/socket.io/socket.io.js"></script>
@@ -184,8 +186,14 @@
                 const { by, content } = message;
                 const messageElement = document.createElement("p");
                 messageElement.innerHTML = `${by}: ${content}`;
-             
+            
                 historyElem.appendChild(messageElement);
+            }
+        });
+
+        socket.on("play-sound", ({ sound }) => {
+            if (sound === "move") {
+                document.getElementById("audio-move").play();
             }
         });
 

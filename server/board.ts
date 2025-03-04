@@ -28,8 +28,8 @@ export class Board {
             this.getGrid().push(row);
         }
 
-        //this.loadBoardDesc(genInitialChessBoardDesc());
-        this.loadBoardDesc(genTestBoardDesc());
+        this.loadBoardDesc(genInitialChessBoardDesc());
+        //this.loadBoardDesc(genTestBoardDesc());
     }
 
     getGrid(): Grid {

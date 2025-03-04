@@ -331,6 +331,9 @@ io.on("connection", (socket) => {
         for (const usernameInGame of game.getUsers()) {
             const gameData = game.asClientView(usernameInGame);
             io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+
+            // Tell the clients to play a movement sound.
+            io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "move" });
         }
     });
 
