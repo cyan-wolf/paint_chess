@@ -101,6 +101,12 @@
             globals.timeDisplay.synchronize(gameData.timeDesc);
         }
 
+        function playSound(soundName) {
+            if (soundName === "move") {
+                document.getElementById("audio-move").play();
+            }
+        }
+
         function makeFirstUppercase(word) {
             return word[0].toUpperCase() + word.slice(1);
         }
@@ -161,6 +167,8 @@
         socket.on("move-performed-response", (gameData) => {
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
+
+            playSound("move");
         });
 
         const chatInput = document.getElementById("chat-input");
@@ -188,12 +196,6 @@
                 messageElement.innerHTML = `${by}: ${content}`;
             
                 historyElem.appendChild(messageElement);
-            }
-        });
-
-        socket.on("play-sound", ({ sound }) => {
-            if (sound === "move") {
-                document.getElementById("audio-move").play();
             }
         });
 
