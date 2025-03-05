@@ -15,6 +15,8 @@ export class Game {
     onGameEndDelegates: GameEndDelegate[]
     hasEnded: boolean
 
+    onMiscGameEventDelegates: MiscGameEventDelegate[]
+
     constructor(meta: MetaGameInfo) {
         this.meta = meta;
         this.board = new Board();
@@ -41,6 +43,8 @@ export class Game {
         this.onGameEndDelegates = [];
         this.hasEnded = false;
 
+        this.onMiscGameEventDelegates = [];
+
         // Wire events emitted from the board to the game.
         this.wireBoardEvents();
     }
@@ -50,8 +54,7 @@ export class Game {
         this.board.addBoardEventListener((boardEvent) => {
             switch (boardEvent.kind) {
                 case "check_alert":
-                    // TODO: notify the client of the check somehow
-                    console.log(`${boardEvent.who} is in check at ${boardEvent.kingCoord}`);
+                    this.fireMiscGameEvent(boardEvent);
                     break;
                 case "stalemate":
                     this.finish({
@@ -279,9 +282,21 @@ export class Game {
         }
     }
 
+    // Fires the given event.
+    fireMiscGameEvent(event: MiscGameEvent) {
+        for (const onGameEvent of this.onMiscGameEventDelegates) {
+            onGameEvent(event);
+        }
+    }   
+
     // Calls the supplied callback when the game ends.
     addOnGameEndEventHandler(onGameEnd: GameEndDelegate): void {
         this.onGameEndDelegates.push(onGameEnd);
+    }
+
+    // Calls the supplied callback when the game event occurs.
+    addOnMiscGameEventHandler(onGameEvent: MiscGameEventDelegate): void {
+        this.onMiscGameEventDelegates.push(onGameEvent);
     }
 
     static togglePlayerRole(role: PlayerRole): PlayerRole {

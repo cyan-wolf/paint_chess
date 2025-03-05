@@ -96,3 +96,9 @@ type GameEndResult = {
 };
 
 type GameEndDelegate = (result: GameEndResult) => void;
+
+type MiscGameEvent =
+    | { kind: "check_alert", who: PlayerRole, kingCoord: Coord };
+
+type MiscGameEventDelegate = (event: MiscGameEvent) => void;
+

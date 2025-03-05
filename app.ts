@@ -106,7 +106,6 @@ app.post('/login', (req, res) => {
     else {
         res.redirect('/login');
     }
-
 });
 
 app.get('/find-game', (req, res) => {
@@ -258,6 +257,15 @@ io.on("connection", (socket) => {
 
                 // Make the game no longer active.
                 delete activeGamesDb[gameId];
+            });
+
+            // Used for miscellaneous events.
+            game.addOnMiscGameEventHandler((event) => {
+                if (event.kind === "check_alert") {
+                    for (const usernameInGame of game.getUsers()) {
+                        io.to(`user-${usernameInGame}`).emit("check-alert", { checkEvent: event });
+                    }
+                }
             });
             
             // Redirects the user to "/game/:id" on the client.

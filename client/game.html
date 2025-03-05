@@ -181,6 +181,12 @@
             updateClientState(gameData);
         });
 
+        socket.on("check-alert", ({ checkEvent }) => {
+            // TODO: make the information in this event 
+            // be obvious to the user.
+            console.log(checkEvent);
+        });
+
         const chatInput = document.getElementById("chat-input");
         chatInput.addEventListener("keyup", ({ key }) => {
             if (key === "Enter") {
