@@ -51,6 +51,9 @@
     <!-- Audio for piece move sound. -->
     <audio id="audio-move" src="/public/audio/sfx/Move.mp3"></audio>
 
+    <!-- Audio for game finish sound. -->
+    <audio id="audio-finish" src="/public/audio/sfx/GenericNotify.mp3"></audio>
+
     <!-- For client-side socket.io connection. -->
     <script src="/socket.io/socket.io.js"></script>
 
@@ -102,8 +105,17 @@
         }
 
         function playSound(soundName) {
-            if (soundName === "move") {
-                document.getElementById("audio-move").play();
+            switch (soundName) {
+                case "move":
+                    document.getElementById("audio-move").play();
+                    break;
+
+                case "game-end":
+                    document.getElementById("audio-finish").play();
+                    break;
+
+                default:
+                    break;
             }
         }
 
@@ -167,8 +179,6 @@
         socket.on("move-performed-response", (gameData) => {
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
-
-            playSound("move");
         });
 
         const chatInput = document.getElementById("chat-input");
@@ -197,6 +207,10 @@
             
                 historyElem.appendChild(messageElement);
             }
+        });
+
+        socket.on("play-sound", ({ sound }) => {
+            playSound(sound);
         });
 
         socket.on("game-ended", ({ result }) => {

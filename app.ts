@@ -246,6 +246,9 @@ io.on("connection", (socket) => {
                     // Ends the game on the client.
                     io.to(`user-${usernameInGame}`).emit("game-ended", { result });
 
+                    // Tell the clients to play a "game-end" sound.
+                    io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
+
                     // TODO: add a record of the results of the game to the database
                     // ...
 
@@ -331,6 +334,9 @@ io.on("connection", (socket) => {
         for (const usernameInGame of game.getUsers()) {
             const gameData = game.asClientView(usernameInGame);
             io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+
+            // Tell the clients to play a movement sound.
+            io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "move" });
         }
     });
 
