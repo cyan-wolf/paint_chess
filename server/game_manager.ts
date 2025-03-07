@@ -10,27 +10,39 @@ type GameQueue = {
     }
 };
 
+type PlayerInfo = {
+    gameId?: ID,
+    joined: boolean,
+    active: boolean,
+    queueing: boolean,
+};
+
+type PlayerRegistry = {
+    [username: string]: PlayerInfo,
+};
+
 type ActiveGames = {
     [gameId: ID]: Game
 };
 
-type ActivePlayers = {
-    [player: string]: {
-        gameId: ID,
-        joined: boolean,
-    };
-};
+// type ActivePlayers = {
+//     [player: string]: {
+//         gameId: ID,
+//         joined: boolean,
+//     };
+// };
 
 export class GameManager {
     queuedGamesDb: GameQueue;
     activeGamesDb: ActiveGames;
-    activePlayers: ActivePlayers;
+    playerRegistry: PlayerRegistry
+
     readonly io: Server
 
     constructor(io: Server) {
         this.queuedGamesDb = {};
         this.activeGamesDb = {};
-        this.activePlayers = {};
+        this.playerRegistry = {};
 
         this.io = io;
     }
@@ -50,9 +62,16 @@ export class GameManager {
         return Object.hasOwn(this.activeGamesDb, gameId);
     }
 
+    // Determines whether the given player is already in queue.
+    usernameIsQueueingGame(username: string): boolean {
+        return Object.hasOwn(this.playerRegistry, username) && 
+            this.playerRegistry[username].queueing;
+    }
+
     // Determines whether the given user is in an active game.
     usernameIsActive(username: string): boolean {
-        return Object.hasOwn(this.activePlayers, username);
+        return Object.hasOwn(this.playerRegistry, username) && 
+            this.playerRegistry[username].active;
     }
 
     // Determines whether the given username is in the game 
@@ -62,12 +81,39 @@ export class GameManager {
             this.activeGamesDb[gameId].hasUser(username);
     }
 
+    usernameInRegistry(username: string): boolean {
+        return Object.hasOwn(this.playerRegistry, username);
+    }
+
+    // Saves a player to the registry if it wasn't in it already.
+    saveUsernameToRegistry(username: string) {
+        if (!this.usernameInRegistry(username)) {
+            this.playerRegistry[username] = {
+                joined: false,
+                active: false,
+                queueing: false,
+            };
+        }
+    }
+
+    // Gets a player from the registry.
+    getPlayer(username: string): PlayerInfo {
+        if (!this.usernameInRegistry(username)) {
+            throw new Error(`invalid player ${username}`);
+            
+        }
+        return this.playerRegistry[username];
+    }
+
+    createGame() {
+        
+    }
+
     // Manages socket connections.
     connectSockets() {
         const io = this.io;
         const queuedGamesDb = this.queuedGamesDb;
         const activeGamesDb = this.activeGamesDb;
-        const activePlayers = this.activePlayers;
 
         // Setup sockets.
         io.on("connection", (socket) => {
@@ -81,6 +127,9 @@ export class GameManager {
             // For sending events using only the username.
             socket.join(`user-${username}`);
 
+            this.saveUsernameToRegistry(username);
+
+            // When the user queues a new game.
             socket.on("queue-game", (gameSettings) => {
                 const gameId = this.genId();
                 queuedGamesDb[gameId] = {
@@ -100,9 +149,18 @@ export class GameManager {
                 }
                 const queuedGame = queuedGamesDb[gameId];
                 
-                if (queuedGame.waitingPlayers.includes(username)) {
-                    return; // avoid duplicate users in the same game
+                // if (queuedGame.waitingPlayers.includes(username)) {
+                //     return; // avoid duplicate users in the same game
+                // }
+                if (this.usernameIsQueueingGame(username)) {
+                    return; // avoid users that are already queueing
                 }
+
+                // Mark the current player as queueing the game.
+                const playerInfo = this.playerRegistry[username];
+                playerInfo.gameId = gameId;
+                playerInfo.queueing = true;
+
                 queuedGame.waitingPlayers.push(username);
                 socket.join(`game-${gameId}`);
 
@@ -111,13 +169,18 @@ export class GameManager {
                     delete queuedGamesDb[gameId];
 
                     // Joining game logic
-                    const [p1, p2] = queuedGame.waitingPlayers;
+                    const [usernameP1, usernameP2] = queuedGame.waitingPlayers;
 
-                    activePlayers[p1] = { gameId, joined: false };
-                    activePlayers[p2] = { gameId, joined: false };
+                    // Unnecessary?
+                    // this.playerRegistry[usernameP1].joined = false;
+                    // this.playerRegistry[usernameP2].joined = false;
+
+                    this.playerRegistry[usernameP1].active = true;
+                    this.playerRegistry[usernameP2].active = true;
 
                     const game = new Game({
-                        p1, p2, gameId,
+                        p1: usernameP1, p2: usernameP2, 
+                        gameId,
                         joinedPlayers: 0,
                         secsPerPlayer: 5 * 60,
                         hasStarted: false,
@@ -143,8 +206,12 @@ export class GameManager {
                             // TODO: add a record of the results of the game to the database
                             // ...
 
-                            // Make the player no longer active.
-                            delete activePlayers[usernameInGame];
+                            // Reset the player's registry.
+                            const playerInfo = this.playerRegistry[usernameInGame];
+                            playerInfo.gameId = undefined;
+                            playerInfo.active = false;
+                            playerInfo.joined = false;
+                            playerInfo.queueing = false;
                         }
 
                         // Make the game no longer active.
@@ -163,7 +230,7 @@ export class GameManager {
                     // Ignore socket if the player is not in a game.
                     return; 
                 }
-                const gameId = activePlayers[username].gameId;
+                const gameId = this.playerRegistry[username].gameId!;
                 
                 // Re-join the user to the socket game room, as 
                 // the connection was reset when the page reloaded 
@@ -174,11 +241,11 @@ export class GameManager {
                 const game = activeGamesDb[gameId];
 
                 // Player is joining for the first time.
-                if (!activePlayers[username].joined) {
+                if (!this.playerRegistry[username].joined) {
                     // Increment the number of joined players.
                     game.joinPlayer();
 
-                    activePlayers[username].joined = true;
+                    this.playerRegistry[username].joined = true;
                 } 
                 // Player is rejoining the game.
                 else if (game.getUsers().includes(username)) {
@@ -207,7 +274,7 @@ export class GameManager {
                     // Ignore socket if the player is not in a game.
                     return; 
                 }
-                const gameId = activePlayers[username].gameId;
+                const gameId = this.playerRegistry[username].gameId!;
                 const game = activeGamesDb[gameId];
 
                 if (typeof move !== "object") {
@@ -241,11 +308,11 @@ export class GameManager {
                     return; // do not accept strange input
                 }
 
-                if (content.length === 0) {
+                if (content.trim().length === 0) {
                     return; // only accept valid messages
                 }
 
-                const gameId = activePlayers[username].gameId;
+                const gameId = this.playerRegistry[username].gameId!;
                 const game = activeGamesDb[gameId];
 
                 game.publishMessage({
@@ -267,7 +334,7 @@ export class GameManager {
                     // Ignore socket if the player is not in a game.
                     return; 
                 }
-                const gameId = activePlayers[username].gameId;
+                const gameId = this.playerRegistry[username].gameId!;
                 const game = activeGamesDb[gameId];
 
                 io.to(socket.id)
@@ -281,7 +348,7 @@ export class GameManager {
                     // Ignore socket if the player is not in a game.
                     return; 
                 }
-                const gameId = activePlayers[username].gameId;
+                const gameId = this.playerRegistry[username].gameId!;
                 const game = activeGamesDb[gameId];
 
                 game.finish({

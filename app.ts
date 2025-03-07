@@ -109,8 +109,7 @@ app.get('/find-game', (req, res) => {
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
 
-// This route is currently planned to be used for queueing games,
-// but it's probably better to use sockets instead.
+// This route is currently planned to be used for queueing games.
 app.post('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
