@@ -90,7 +90,6 @@ type CheckStatus =
     | null;
 
 type BoardEvent = 
-    // | { kind: "check_alert", who: PlayerRole, kingCoord: Coord }
     | { kind: "stalemate" }
     | { kind: "checkmate", by: PlayerRole };
 

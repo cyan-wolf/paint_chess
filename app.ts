@@ -222,8 +222,6 @@ io.on("connection", (socket) => {
             activePlayers[p1] = { gameId, joined: false };
             activePlayers[p2] = { gameId, joined: false };
 
-            //console.log(`players ${p1} and ${p2} are about to join game ${gameId}`);
-
             const game = new Game({
                 p1, p2, gameId,
                 joinedPlayers: 0,
@@ -258,17 +256,6 @@ io.on("connection", (socket) => {
                 // Make the game no longer active.
                 delete activeGamesDb[gameId];
             });
-
-            // // Used for miscellaneous events.
-            // game.addOnMiscGameEventHandler((event) => {
-            //     if (event.kind === "check_alert") {
-            //         const { who, kingCoord } = event;
-
-            //         for (const usernameInGame of game.getUsers()) {
-            //             io.to(`user-${usernameInGame}`).emit("check-alert", { checkEvent: { who, kingCoord } });
-            //         }
-            //     }
-            // });
             
             // Redirects the user to "/game/:id" on the client.
             io.to(`game-${gameId}`).emit("found-game", { gameId });

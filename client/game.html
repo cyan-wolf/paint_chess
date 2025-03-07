@@ -189,9 +189,6 @@
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
                 socket.emit("perform-move", move);
-
-                // // Clear the check alert (used to notify if a user is in check).
-                // document.getElementById("check-alert").innerHTML = "";
             });
         });
 
@@ -199,13 +196,6 @@
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
         });
-
-        // socket.on("check-alert", ({ checkEvent }) => {
-        //     const { who, kingCoord } = checkEvent;
-        //     const msg = `${playerRoleToLongForm(who)} is in check at ${kingCoord}`;
-
-        //     document.getElementById("check-alert").innerHTML = msg;
-        // });
 
         const chatInput = document.getElementById("chat-input");
         chatInput.addEventListener("keyup", ({ key }) => {

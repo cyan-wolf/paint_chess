@@ -64,7 +64,7 @@ export class Board {
 
         // Debug:
         // Gen the other player's legal moves.
-        console.log(`${this.turn} legal moves: `, genLegalMoves(this.gridData, this.turn));
+        // console.log(`${this.turn} legal moves: `, genLegalMoves(this.gridData, this.turn));
 
         // Verify if the other player is in check (for alerting the players of the check).
         const otherPlayerChecked = inCheck(this.gridData, this.turn);
@@ -221,7 +221,6 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
 
     //Look for check.
     if (inCheck(gridData, turn)) {
-        //console.log(move, `would cause ${turn} to be in check!`);
         return false;
     }
 
