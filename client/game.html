@@ -41,6 +41,7 @@
 
                 <div id="right-area-center">
                     <button id="btn-resign">Resign</button>
+                    <div id="check-alert"></div>
                     <div id="game-result"></div>
                 </div>
 
@@ -102,6 +103,21 @@
             
             // Synchronizes the client's time display with the server's.
             globals.timeDisplay.synchronize(gameData.timeDesc);
+
+            // Displays the "check status" of the game.
+            displayCheckStatus(gameData.checkStatus);
+        }
+
+        // Displays the "check status" of the game.
+        function displayCheckStatus(checkStatus) {
+            if (checkStatus !== null) {
+                const { who, kingCoord } = checkStatus;
+                const msg = `${playerRoleToLongForm(who)} is in check at ${kingCoord}`;
+
+                document.getElementById("check-alert").innerHTML = msg;
+            } else {
+                document.getElementById("check-alert").innerHTML = "";
+            }
         }
 
         function playSound(soundName) {
@@ -173,6 +189,9 @@
             // Use sockets to let the server know that this coordinate was clicked.
             globals.board.addOnMoveEventHandler((move) => {
                 socket.emit("perform-move", move);
+
+                // // Clear the check alert (used to notify if a user is in check).
+                // document.getElementById("check-alert").innerHTML = "";
             });
         });
 
@@ -181,11 +200,12 @@
             updateClientState(gameData);
         });
 
-        socket.on("check-alert", ({ checkEvent }) => {
-            // TODO: make the information in this event 
-            // be obvious to the user.
-            console.log(checkEvent);
-        });
+        // socket.on("check-alert", ({ checkEvent }) => {
+        //     const { who, kingCoord } = checkEvent;
+        //     const msg = `${playerRoleToLongForm(who)} is in check at ${kingCoord}`;
+
+        //     document.getElementById("check-alert").innerHTML = msg;
+        // });
 
         const chatInput = document.getElementById("chat-input");
         chatInput.addEventListener("keyup", ({ key }) => {

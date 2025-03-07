@@ -82,8 +82,15 @@ type BoardRundown = {
     }
 };
 
+/**
+ * Used for telling the client whether a player is in check or not.
+ */
+type CheckStatus = 
+    | { who: PlayerRole, kingCoord: Coord } 
+    | null;
+
 type BoardEvent = 
-    | { kind: "check_alert", who: PlayerRole, kingCoord: Coord }
+    // | { kind: "check_alert", who: PlayerRole, kingCoord: Coord }
     | { kind: "stalemate" }
     | { kind: "checkmate", by: PlayerRole };
 

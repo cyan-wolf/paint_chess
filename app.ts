@@ -259,14 +259,16 @@ io.on("connection", (socket) => {
                 delete activeGamesDb[gameId];
             });
 
-            // Used for miscellaneous events.
-            game.addOnMiscGameEventHandler((event) => {
-                if (event.kind === "check_alert") {
-                    for (const usernameInGame of game.getUsers()) {
-                        io.to(`user-${usernameInGame}`).emit("check-alert", { checkEvent: event });
-                    }
-                }
-            });
+            // // Used for miscellaneous events.
+            // game.addOnMiscGameEventHandler((event) => {
+            //     if (event.kind === "check_alert") {
+            //         const { who, kingCoord } = event;
+
+            //         for (const usernameInGame of game.getUsers()) {
+            //             io.to(`user-${usernameInGame}`).emit("check-alert", { checkEvent: { who, kingCoord } });
+            //         }
+            //     }
+            // });
             
             // Redirects the user to "/game/:id" on the client.
             io.to(`game-${gameId}`).emit("found-game", { gameId });

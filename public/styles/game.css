@@ -163,3 +163,10 @@ body {
     font-weight: bold;
     font-style: italic;
 }
+
+#check-alert {
+    font-size: 25px;
+    text-align: center;
+    font-weight: bold;
+    font-style: italic;
+}

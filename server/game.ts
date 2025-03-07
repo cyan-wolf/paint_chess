@@ -53,9 +53,9 @@ export class Game {
     wireBoardEvents() {
         this.board.addBoardEventListener((boardEvent) => {
             switch (boardEvent.kind) {
-                case "check_alert":
-                    this.fireMiscGameEvent(boardEvent);
-                    break;
+                // case "check_alert":
+                //     this.fireMiscGameEvent(boardEvent);
+                //     break;
                 case "stalemate":
                     this.finish({
                         method: "stalemate",
@@ -158,6 +158,7 @@ export class Game {
             },
             boardDesc: this.board.toBoardDesc(),
             timeDesc,
+            checkStatus: structuredClone(this.board.checkStatus),
         };
 
         return data;
@@ -282,22 +283,22 @@ export class Game {
         }
     }
 
-    // Fires the given event.
-    fireMiscGameEvent(event: MiscGameEvent) {
-        for (const onGameEvent of this.onMiscGameEventDelegates) {
-            onGameEvent(event);
-        }
-    }   
+    // // Fires the given event.
+    // fireMiscGameEvent(event: MiscGameEvent) {
+    //     for (const onGameEvent of this.onMiscGameEventDelegates) {
+    //         onGameEvent(event);
+    //     }
+    // }   
 
     // Calls the supplied callback when the game ends.
     addOnGameEndEventHandler(onGameEnd: GameEndDelegate): void {
         this.onGameEndDelegates.push(onGameEnd);
     }
 
-    // Calls the supplied callback when the game event occurs.
-    addOnMiscGameEventHandler(onGameEvent: MiscGameEventDelegate): void {
-        this.onMiscGameEventDelegates.push(onGameEvent);
-    }
+    // // Calls the supplied callback when the game event occurs.
+    // addOnMiscGameEventHandler(onGameEvent: MiscGameEventDelegate): void {
+    //     this.onMiscGameEventDelegates.push(onGameEvent);
+    // }
 
     static togglePlayerRole(role: PlayerRole): PlayerRole {
         return (role === "p1") ? "p2" : "p1";

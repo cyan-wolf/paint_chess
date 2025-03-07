@@ -66,6 +66,7 @@ type GameViewForClient = {
             isTicking: boolean,
         }
     },
+    checkStatus: CheckStatus,
 };
 
 /**

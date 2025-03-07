@@ -5,6 +5,9 @@ export class Board {
     gridData: GridData
     turn: PlayerRole
 
+    // Used for reporting purposes, not for actual logic.
+    checkStatus: CheckStatus
+
     boardEventListeners: BoardEventListener[]
 
     constructor() {
@@ -17,6 +20,8 @@ export class Board {
             grid: [],
         };
         this.turn = "p1";
+
+        this.checkStatus = null;
 
         this.boardEventListeners = [];
 
@@ -54,6 +59,9 @@ export class Board {
         // Update the actual grid data.
         this.gridData = newGridData;
 
+        // Reset check status (used for reporting).
+        this.checkStatus = null;
+
         // Debug:
         // Gen the other player's legal moves.
         console.log(`${this.turn} legal moves: `, genLegalMoves(this.gridData, this.turn));
@@ -74,11 +82,11 @@ export class Board {
         if (otherPlayerChecked) {
             const checkedPlayer = this.turn;
 
-            this.emitBoardEvent({ 
-                kind: "check_alert", 
+            // Used for reporting whether a player is in check.
+            this.checkStatus = {
                 who: checkedPlayer, 
                 kingCoord: this.gridData.kingCoords[checkedPlayer],
-            });
+            };
         }
         else if (otherPlayerMoveless) {
             this.emitBoardEvent({ kind: "stalemate" });
