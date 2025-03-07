@@ -6,7 +6,10 @@ type ID = string;
 // Placeholder way of storing game data.
 type GameQueue = {
     [gameId: ID]: {
-        waitingPlayers: string[]
+        waitingPlayers: string[],
+        gameSettings: {
+            secsPerPlayer: number,
+        },
     }
 };
 
@@ -24,13 +27,6 @@ type PlayerRegistry = {
 type ActiveGames = {
     [gameId: ID]: Game
 };
-
-// type ActivePlayers = {
-//     [player: string]: {
-//         gameId: ID,
-//         joined: boolean,
-//     };
-// };
 
 export class GameManager {
     queuedGamesDb: GameQueue;
@@ -105,8 +101,69 @@ export class GameManager {
         return this.playerRegistry[username];
     }
 
-    createGame() {
-        
+    // Turns a queued game into an active game.
+    createGame(gameId: ID) {
+        if (!this.gameIdIsQueued(gameId)) {
+            return; // prevent access to games that aren't being queued
+        }
+
+        const queuedGame = this.queuedGamesDb[gameId];
+
+        // Remove game from queue.
+        delete this.queuedGamesDb[gameId];
+
+        // Unnecessary?
+        // this.playerRegistry[usernameP1].joined = false;
+        // this.playerRegistry[usernameP2].joined = false;
+
+        for (const queuedUsername of queuedGame.waitingPlayers) {
+            this.playerRegistry[queuedUsername].queueing = false;
+            this.playerRegistry[queuedUsername].active = true;
+        }
+
+        const game = new Game({
+            gameId,
+            p1: queuedGame.waitingPlayers[0], 
+            p2: queuedGame.waitingPlayers[1], 
+            joinedPlayers: 0,
+            secsPerPlayer: queuedGame.gameSettings.secsPerPlayer,
+            hasStarted: false,
+        });
+        this.activeGamesDb[gameId] = game;
+
+        game.addOnGameEndEventHandler((result) => {
+            console.log("game ended!");
+            console.log(result);
+
+            for (const usernameInGame of game.getUsers()) {
+                const gameData = game.asClientView(usernameInGame);
+
+                // Send the final state of the game to all players before ending the game.
+                this.io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+
+                // Ends the game on the client.
+                this.io.to(`user-${usernameInGame}`).emit("game-ended", { result });
+
+                // Tell the clients to play a "game-end" sound.
+                this.io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
+
+                // TODO: add a record of the results of the game to the database
+                // ...
+
+                // Reset the player's registry.
+                const playerInfo = this.playerRegistry[usernameInGame];
+                playerInfo.gameId = undefined;
+                playerInfo.active = false;
+                playerInfo.joined = false;
+                playerInfo.queueing = false;
+            }
+
+            // Make the game no longer active.
+            delete this.activeGamesDb[gameId];
+        });
+
+        // Redirects the user to "/game/:id" on the client.
+        this.io.to(`game-${gameId}`).emit("found-game", { gameId });
     }
 
     // Manages socket connections.
@@ -134,6 +191,11 @@ export class GameManager {
                 const gameId = this.genId();
                 queuedGamesDb[gameId] = {
                     waitingPlayers: [],
+                    // TODO: validate game settings sent from client 
+                    //       instead of hardcoding them here
+                    gameSettings: {
+                        secsPerPlayer: 10 * 60,
+                    }
                 };
 
                 io.emit("current-game-queue", queuedGamesDb);
@@ -149,9 +211,6 @@ export class GameManager {
                 }
                 const queuedGame = queuedGamesDb[gameId];
                 
-                // if (queuedGame.waitingPlayers.includes(username)) {
-                //     return; // avoid duplicate users in the same game
-                // }
                 if (this.usernameIsQueueingGame(username)) {
                     return; // avoid users that are already queueing
                 }
@@ -165,61 +224,7 @@ export class GameManager {
                 socket.join(`game-${gameId}`);
 
                 if (queuedGame.waitingPlayers.length == 2) {
-                    // Remove game from queue.
-                    delete queuedGamesDb[gameId];
-
-                    // Joining game logic
-                    const [usernameP1, usernameP2] = queuedGame.waitingPlayers;
-
-                    // Unnecessary?
-                    // this.playerRegistry[usernameP1].joined = false;
-                    // this.playerRegistry[usernameP2].joined = false;
-
-                    this.playerRegistry[usernameP1].active = true;
-                    this.playerRegistry[usernameP2].active = true;
-
-                    const game = new Game({
-                        p1: usernameP1, p2: usernameP2, 
-                        gameId,
-                        joinedPlayers: 0,
-                        secsPerPlayer: 5 * 60,
-                        hasStarted: false,
-                    });
-                    activeGamesDb[gameId] = game;
-
-                    game.addOnGameEndEventHandler((result) => {
-                        console.log("game ended!");
-                        console.log(result);
-
-                        for (const usernameInGame of game.getUsers()) {
-                            const gameData = game.asClientView(usernameInGame);
-
-                            // Send the final state of the game to all players before ending the game.
-                            io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
-
-                            // Ends the game on the client.
-                            io.to(`user-${usernameInGame}`).emit("game-ended", { result });
-
-                            // Tell the clients to play a "game-end" sound.
-                            io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
-
-                            // TODO: add a record of the results of the game to the database
-                            // ...
-
-                            // Reset the player's registry.
-                            const playerInfo = this.playerRegistry[usernameInGame];
-                            playerInfo.gameId = undefined;
-                            playerInfo.active = false;
-                            playerInfo.joined = false;
-                            playerInfo.queueing = false;
-                        }
-
-                        // Make the game no longer active.
-                        delete activeGamesDb[gameId];
-                    });
-                    
-                    // Redirects the user to "/game/:id" on the client.
-                    io.to(`game-${gameId}`).emit("found-game", { gameId });
+                    this.createGame(gameId);
                 }
                 
                 io.emit("current-game-queue", queuedGamesDb);
