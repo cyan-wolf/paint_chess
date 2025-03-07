@@ -14,7 +14,7 @@ import { Server } from "npm:socket.io@4.8.1";
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
-import { Game } from "./server/game.ts";
+import { GameManager } from "./server/game_manager.ts"
 import db from "./server/db_conn.ts";
 
 const app = express();
@@ -44,8 +44,7 @@ io.engine.use(sessionMiddleware);
 
 
 type User = {
-    username: string,
-    id: string, // unnecessary?
+    username: string
 };
 
 // Augment express-session with a custom SessionData object.
@@ -92,14 +91,9 @@ function checkLogin(reqBody: { username: string, password: string }) {
         || reqBody.username === "other_user" && reqBody.password === "456";
 }
 
-// Placeholder ID generator.
-function genId() {
-    return Math.random().toString().substring(2);
-}
-
 app.post('/login', (req, res) => {
     if (checkLogin(req.body)) {
-        req.session.user = { username: req.body.username, id: genId() };
+        req.session.user = { username: req.body.username };
         
         res.redirect('/');
     }
@@ -123,27 +117,12 @@ app.post('/find-game', (req, res) => {
     }
 });
 
-// Placeholder way of storing game data.
-type GameQueue = {
-    [gameId: string]: {
-        waitingPlayers: string[]
-    }
-};
+app.get('/testing', (_req, res) => {
+    res.sendFile(path.join(__dirname, "client/testing.html"));
+});
 
-type ActiveGames = {
-    [gameId: string]: Game
-};
-
-type ActivePlayers = {
-    [player: string]: {
-        gameId: string
-        joined: boolean
-    };
-};
-
-const queuedGamesDb: GameQueue = {};
-const activeGamesDb: ActiveGames = {};
-const activePlayers: ActivePlayers = {};
+const gameManager = new GameManager(io);
+gameManager.connectSockets();
 
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;
@@ -156,246 +135,18 @@ app.get("/game/:id", (req, res) => {
     const username = req.session.user.username;
 
     // Game ID must be valid.
-    if (!Object.hasOwn(activeGamesDb, gameId)) {
+    if (!gameManager.gameIdIsActive(gameId)) {
         res.redirect("/find-game");
         return;
     }
-    const game = activeGamesDb[gameId];
 
     // User must be a player in the game.
-    if (!game.hasUser(username)) {
+    // TODO: Spectator functionality could be added here.
+    if (!gameManager.usernameInGame(username, gameId)) {
         res.status(400).send("User is not playing this game");
     }
 
     res.sendFile(path.join(__dirname, "client/game.html"));
-});
-
-app.get('/testing', (_req, res) => {
-    res.sendFile(path.join(__dirname, "client/testing.html"));
-});
-
-
-// Setup sockets.
-io.on("connection", (socket) => {
-    const session = socket.request.session;
-
-    if (!session.user) {
-        return; // ignore events from this socket
-    }
-
-    const username = session.user.username;
-    // For sending events using only the username.
-    socket.join(`user-${username}`);
-
-    socket.on("queue-game", (gameSettings) => {
-        const gameId = genId();
-        queuedGamesDb[gameId] = {
-            waitingPlayers: [],
-        };
-
-        io.emit("current-game-queue", queuedGamesDb);
-    });
-
-    socket.on("request-current-game-queue", () => {
-        io.to(socket.id).emit("current-game-queue", queuedGamesDb);
-    });
-
-    socket.on("join-game-request", ({ gameId }) => {
-        if (!Object.hasOwn(queuedGamesDb, gameId)) {
-            return; // ignore event if game ID is invalid
-        }
-        const queuedGame = queuedGamesDb[gameId];
-        
-        if (queuedGame.waitingPlayers.includes(username)) {
-            return; // avoid duplicate users in the same game
-        }
-        queuedGame.waitingPlayers.push(username);
-        socket.join(`game-${gameId}`);
-
-        if (queuedGame.waitingPlayers.length == 2) {
-            // Remove game from queue.
-            delete queuedGamesDb[gameId];
-
-            // Joining game logic
-            const [p1, p2] = queuedGame.waitingPlayers;
-
-            activePlayers[p1] = { gameId, joined: false };
-            activePlayers[p2] = { gameId, joined: false };
-
-            const game = new Game({
-                p1, p2, gameId,
-                joinedPlayers: 0,
-                secsPerPlayer: 5 * 60,
-                hasStarted: false,
-            });
-            activeGamesDb[gameId] = game;
-
-            game.addOnGameEndEventHandler((result) => {
-                console.log("game ended!");
-                console.log(result);
-
-                for (const usernameInGame of game.getUsers()) {
-                    const gameData = game.asClientView(usernameInGame);
-
-                    // Send the final state of the game to all players before ending the game.
-                    io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
-
-                    // Ends the game on the client.
-                    io.to(`user-${usernameInGame}`).emit("game-ended", { result });
-
-                    // Tell the clients to play a "game-end" sound.
-                    io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
-
-                    // TODO: add a record of the results of the game to the database
-                    // ...
-
-                    // Make the player no longer active.
-                    delete activePlayers[usernameInGame];
-                }
-
-                // Make the game no longer active.
-                delete activeGamesDb[gameId];
-            });
-            
-            // Redirects the user to "/game/:id" on the client.
-            io.to(`game-${gameId}`).emit("found-game", { gameId });
-        }
-        
-        io.emit("current-game-queue", queuedGamesDb);
-    });
-
-    socket.on("ready-to-start-game", () => {
-        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
-            // Ignore socket if the player is not in a game.
-            return; 
-        }
-        const gameId = activePlayers[username].gameId;
-        
-        // Re-join the user to the socket game room, as 
-        // the connection was reset when the page reloaded 
-        // when getting to "/game/:id".
-        socket.join(`game-${gameId}`);
-        socket.join(`user-${username}`);
-
-        const game = activeGamesDb[gameId];
-
-        // Player is joining for the first time.
-        if (!activePlayers[username].joined) {
-            // Increment the number of joined players.
-            game.joinPlayer();
-
-            activePlayers[username].joined = true;
-        } 
-        // Player is rejoining the game.
-        else if (game.getUsers().includes(username)) {
-            const gameData = game.asClientView(username);
-            io.to(`user-${username}`).emit("game-start", gameData);
-
-            // Exit event handler here to avoid the 
-            // other player from receiving the "game-start" event as well.
-            return;
-        }
-
-        // Officially start the game.
-        if (game.getJoinedPlayerAmt() == 2 && !game.hasStarted()) {
-            // Sets up various parts of the game.
-            game.start();
-
-            for (const usernameInGame of game.getUsers()) {
-                const gameData = game.asClientView(usernameInGame);
-                io.to(`user-${usernameInGame}`).emit("game-start", gameData);
-            }
-        }
-    });
-
-    socket.on("perform-move", (move) => {
-        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
-            // Ignore socket if the player is not in a game.
-            return; 
-        }
-        const gameId = activePlayers[username].gameId;
-        const game = activeGamesDb[gameId];
-
-        if (typeof move !== "object") {
-            return; // do not accept strange input
-        }
-        move.username = username;
-
-        const couldMove = game.processMove(move);
-
-        if (!couldMove) {
-            return;
-        }
-
-        // Send the result of the move to the users in the game.
-        for (const usernameInGame of game.getUsers()) {
-            const gameData = game.asClientView(usernameInGame);
-            io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
-
-            // Tell the clients to play a movement sound.
-            io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "move" });
-        }
-    });
-
-    socket.on("chat-publish", ({ content }) => {
-        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
-            // Ignore socket if the player is not in a game.
-            return; 
-        }
-
-        if (typeof content !== 'string') {
-            return; // do not accept strange input
-        }
-
-        if (content.length === 0) {
-            return; // only accept valid messages
-        }
-
-        const gameId = activePlayers[username].gameId;
-        const game = activeGamesDb[gameId];
-
-        game.publishMessage({
-            by: username,
-            content,
-        });
-
-        // Send the chat to the users in the game.
-        for (const usernameInGame of game.getUsers()) {
-            io.to(`user-${usernameInGame}`)
-                .emit("current-chat-history", {
-                    history: game.getMessageHistory(9)
-                });
-        }
-    });
-
-    socket.on("request-current-chat-history", () => {
-        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
-            // Ignore socket if the player is not in a game.
-            return; 
-        }
-        const gameId = activePlayers[username].gameId;
-        const game = activeGamesDb[gameId];
-
-        io.to(socket.id)
-            .emit("current-chat-history", {
-                history: game.getMessageHistory(9)
-            });
-    });
-
-    socket.on("resign", () => {
-        if (!Object.hasOwn(activePlayers, username) || !Object.hasOwn(activePlayers[username], "gameId")) {
-            // Ignore socket if the player is not in a game.
-            return; 
-        }
-        const gameId = activePlayers[username].gameId;
-        const game = activeGamesDb[gameId];
-
-        game.finish({
-            // The other player wins.
-            winner: Game.togglePlayerRole(game.userToRole(username)),
-            method: "resign",
-        });
-    });
 });
 
 const port = process.env.PORT || 3000;
