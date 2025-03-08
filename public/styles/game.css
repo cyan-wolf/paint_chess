@@ -20,14 +20,12 @@ body {
     justify-content: space-between;
     margin-left: 10vw;
     margin-right: 10vw;
-    /* background-color: gray; */
 }
 
 .left-area {
     display: flex;
     flex-direction: column;
     width: 20vw;
-    /* width: 20vw; */
 }
 
 #game-info {
@@ -36,7 +34,16 @@ body {
     color: white;
 }
 
-.dot {
+#game-info a {
+    color: white;
+    text-decoration: none;
+}
+
+#game-info a:hover {
+    text-decoration: underline;
+}
+
+#game-info .dot {
     width: 10px;
     height: 10px;
     background-color: white;
@@ -106,50 +113,6 @@ body {
     width: 100%;
     font-size: 30px;
     cursor: pointer;
-}
-
-.nav {
-    background-color: rgb(0, 0, 0);
-    display: flex;
-    flex-direction: row;
-    padding: 0;
-}
-
-.nav a {
-    display: block;
-    height: max-content;
-    padding: 10px;
-    text-decoration: none;
-    font-size: 16px;
-    font-weight: bold;
-    --variant-color: white;
-    color: var(--variant-color);
-}
-
-.nav a:hover {
-    text-shadow: 
-        0 0 30px var(--variant-color), 
-        0 0 40px var(--variant-color), 
-        0 0 50px var(--variant-color), 
-        0 0 60px var(--variant-color), 
-        0 0 70px var(--variant-color),
-        0 0 80px var(--variant-color);
-}
-
-.nav a:nth-child(1) {
-    --variant-color: red;
-}
-
-.nav a:nth-child(2) {
-    --variant-color: orange;
-}
-
-.nav a:nth-child(3) {
-    --variant-color: yellow;
-}
-
-.nav a:nth-child(4) {
-    --variant-color: lime;
 }
 
 .right-area {

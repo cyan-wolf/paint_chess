@@ -109,11 +109,24 @@ app.get('/find-game', (req, res) => {
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
 
-// This route is currently planned to be used for queueing games.
+// This route is used for queueing games.
 app.post('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
     }
+});
+
+app.get('/current-user-info', (req, res) => {
+    if (!req.session.user) {
+        res.status(404).send();
+    }
+    const username = req.session.user.username;
+
+    // TODO: connect to database to get more info
+    const userInfo = {
+        username,
+    };
+    res.send(userInfo);
 });
 
 app.get('/testing', (_req, res) => {

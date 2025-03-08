@@ -4,25 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Chess | Game</title>
+    <link rel="stylesheet" href="/public/styles/nav.css">
     <link rel="stylesheet" href="/public/styles/game.css">
     <link rel="stylesheet" href="/public/styles/board.css">
 </head>
 <body>
     <div class="outermost-container">
-        <nav class="nav">
-            <a href="/">Home</a>
-            <a href="/how-to-play">How to Play</a>
-            <a href="/find-game">Find Game</a>
-            <a href="/logout">Logout</a>
+        <nav id="nav" class="nav">
+            <!-- Generated using JavaScript. -->
         </nav>
         <div class="game-content">
             <div class="left-area">
                 <div id="game-info">
                     <div id="game-info-p1">
-                        <span class="dot"></span><span title="Player 1"></span>
+                        <span class="dot"></span><a href="" title="Player 1"></a>
                     </div>
                     <div id="game-info-p2">
-                        <span class="dot"></span><span title="Player 2"></span>
+                        <span class="dot"></span><a href="" title="Player 2"></a>
                     </div>
                     <div id="game-info-turn">
                         Turn: <span class="dot"></span><span></span>
@@ -55,6 +53,9 @@
     <!-- Audio for game finish sound. -->
     <audio id="audio-finish" src="/public/audio/sfx/GenericNotify.mp3"></audio>
 
+    <!-- For filling in the nav bar. -->
+    <script src="/public/scripts/navbar.js"></script>
+
     <!-- For client-side socket.io connection. -->
     <script src="/socket.io/socket.io.js"></script>
 
@@ -75,6 +76,7 @@
         const globals = {
             board: null,
             timeDisplay: null,
+            username: null,
         };
 
         function updateGameInfoSection(gameInfo) {
@@ -84,7 +86,10 @@
                 const displayElem = document.getElementById(`game-info-${label}`);
 
                 displayElem.children[0].style.backgroundColor = gameInfo[label].color;
-                displayElem.children[1].innerHTML = gameInfo[label].username;
+
+                const username = gameInfo[label].username;
+                displayElem.children[1].href = `/profile/${username}`;
+                displayElem.children[1].innerHTML = username;
             }
         }
 
@@ -163,9 +168,25 @@
 
         const socket = io();
         
-        window.addEventListener("load", () => {
+        window.addEventListener("load", async () => {
             socket.emit("ready-to-start-game");
             socket.emit("request-current-chat-history");
+
+            // Get the current user's username from the server.
+            try {
+                const response = await fetch("/current-user-info");
+
+                if (!response.ok) {
+                    throw new Error(`could not get current user information`);
+                }
+                const userInfo = await response.json();
+                globals.username = userInfo.username;
+            }
+            catch (error) {
+                console.error(error.message);
+            }
+
+            fillNav({ username: globals.username });
         });
 
         socket.on("game-start", (gameData) => {

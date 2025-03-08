@@ -1,0 +1,63 @@
+
+
+.nav {
+    background-color: rgb(0, 0, 0);
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+}
+
+.nav-left {
+    display: flex;
+    flex-direction: row;
+    padding: 0;
+    width: 50%;
+}
+
+.nav a {
+    display: block;
+    height: max-content;
+    padding: 10px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: bold;
+
+    --variant-color: white;
+    color: var(--variant-color);
+}
+
+.nav a:hover {
+    text-shadow: 
+        0 0 30px var(--variant-color), 
+        0 0 40px var(--variant-color), 
+        0 0 50px var(--variant-color), 
+        0 0 60px var(--variant-color), 
+        0 0 70px var(--variant-color),
+        0 0 80px var(--variant-color);
+}
+
+.nav-left a:nth-child(1) {
+    --variant-color: red;
+}
+
+.nav-left a:nth-child(2) {
+    --variant-color: orange;
+}
+
+.nav-left a:nth-child(3) {
+    --variant-color: yellow;
+}
+
+.nav-left a:nth-child(4) {
+    --variant-color: lime;
+}
+
+.nav-right {
+    display: flex;
+    flex-direction: row-reverse;
+    width: 50%;
+}
+
+.nav-right a:nth-child(1) {
+    --variant-color: rgb(162, 0, 255);
+}

@@ -3,13 +3,15 @@ import { Game } from "./game.ts";
 
 type ID = string;
 
+type GameSettings = {
+    secsPerPlayer: number,
+};
+
 // Placeholder way of storing game data.
 type GameQueue = {
     [gameId: ID]: {
         waitingPlayers: string[],
-        gameSettings: {
-            secsPerPlayer: number,
-        },
+        gameSettings: GameSettings,
     }
 };
 
@@ -101,6 +103,41 @@ export class GameManager {
         return this.playerRegistry[username];
     }
 
+    // Creates a new queued game.
+    createQueuedGame(gameSettings: GameSettings): ID {
+        const gameId = this.genId();
+
+        this.queuedGamesDb[gameId] = {
+            waitingPlayers: [],
+            gameSettings,
+        };
+        return gameId;
+    }
+
+    // Joins a player to the given game.
+    tryJoinPlayerToQueuedGame(username: string, gameId: ID) {
+        if (!this.gameIdIsQueued(gameId)) {
+            return; // ignore attempt if game ID is invalid
+        }
+        
+        if (this.usernameIsQueueingGame(username)) {
+            return; // avoid users that are already queueing
+        }
+
+        const queuedGame = this.queuedGamesDb[gameId];
+
+        // Mark the current player as queueing the game.
+        const playerInfo = this.playerRegistry[username];
+        playerInfo.gameId = gameId;
+        playerInfo.queueing = true;
+
+        queuedGame.waitingPlayers.push(username);
+        
+        if (queuedGame.waitingPlayers.length == 2) {
+            this.createGame(gameId);
+        }
+    }
+
     // Turns a queued game into an active game.
     createGame(gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
@@ -163,7 +200,9 @@ export class GameManager {
         });
 
         // Redirects the user to "/game/:id" on the client.
-        this.io.to(`game-${gameId}`).emit("found-game", { gameId });
+        for (const usernameInGame of game.getUsers()) {
+            this.io.to(`user-${usernameInGame}`).emit("found-game", { gameId });
+        }
     }
 
     // Manages socket connections.
@@ -188,15 +227,17 @@ export class GameManager {
 
             // When the user queues a new game.
             socket.on("queue-game", (gameSettings) => {
-                const gameId = this.genId();
-                queuedGamesDb[gameId] = {
-                    waitingPlayers: [],
-                    // TODO: validate game settings sent from client 
-                    //       instead of hardcoding them here
-                    gameSettings: {
-                        secsPerPlayer: 10 * 60,
-                    }
+
+                // TODO: validate game settings sent from client 
+                //       instead of hardcoding them here
+                const placeholderGameSettings = {
+                    secsPerPlayer: 10 * 60,
                 };
+
+                const gameId = this.createQueuedGame(placeholderGameSettings);
+
+                // Auto-join the user to the game.
+                this.tryJoinPlayerToQueuedGame(username, gameId);
 
                 io.emit("current-game-queue", queuedGamesDb);
             });
@@ -206,26 +247,7 @@ export class GameManager {
             });
 
             socket.on("join-game-request", ({ gameId }) => {
-                if (!this.gameIdIsQueued(gameId)) {
-                    return; // ignore event if game ID is invalid
-                }
-                const queuedGame = queuedGamesDb[gameId];
-                
-                if (this.usernameIsQueueingGame(username)) {
-                    return; // avoid users that are already queueing
-                }
-
-                // Mark the current player as queueing the game.
-                const playerInfo = this.playerRegistry[username];
-                playerInfo.gameId = gameId;
-                playerInfo.queueing = true;
-
-                queuedGame.waitingPlayers.push(username);
-                socket.join(`game-${gameId}`);
-
-                if (queuedGame.waitingPlayers.length == 2) {
-                    this.createGame(gameId);
-                }
+                this.tryJoinPlayerToQueuedGame(username, gameId);
                 
                 io.emit("current-game-queue", queuedGamesDb);
             });
@@ -240,7 +262,6 @@ export class GameManager {
                 // Re-join the user to the socket game room, as 
                 // the connection was reset when the page reloaded 
                 // when getting to "/game/:id".
-                socket.join(`game-${gameId}`);
                 socket.join(`user-${username}`);
 
                 const game = activeGamesDb[gameId];
