@@ -172,19 +172,7 @@
             socket.emit("ready-to-start-game");
             socket.emit("request-current-chat-history");
 
-            // Get the current user's username from the server.
-            try {
-                const response = await fetch("/current-user-info");
-
-                if (!response.ok) {
-                    throw new Error(`could not get current user information`);
-                }
-                const userInfo = await response.json();
-                globals.username = userInfo.username;
-            }
-            catch (error) {
-                console.error(error.message);
-            }
+            globals.username = await fetchUsername();
 
             fillNav({ username: globals.username });
         });

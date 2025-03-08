@@ -1,4 +1,21 @@
 
+async function fetchUsername() {
+    // Get the current user's username from the server.
+    try {
+        const response = await fetch("/current-user-info");
+
+        if (!response.ok) {
+            throw new Error(`could not get current user information`);
+        }
+        const userInfo = await response.json();
+        return userInfo.username;
+    }
+    catch (error) {
+        console.error(error.message);
+    }
+    return null;
+}
+
 function fillNav(navSettings) {
     const { username } = navSettings;
 

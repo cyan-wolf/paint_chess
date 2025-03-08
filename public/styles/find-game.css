@@ -1,0 +1,29 @@
+
+.center-container {
+    background-color: rgb(94, 94, 94);
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+.center-container h1 {
+    margin: 0;
+}
+
+.game-settings {
+    background-color: rgb(77, 77, 77);
+    margin-bottom: 40px;
+}
+
+.game-settings #queue-btn {
+    margin-top: 20px;
+
+    color: white;
+    background-color: rgb(34, 34, 34);
+    border: none;
+    padding: 10px;
+}
+
+.game-settings #queue-btn:hover {
+    background-color: rgb(61, 61, 61);
+}

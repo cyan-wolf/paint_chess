@@ -3,6 +3,10 @@ import { Game } from "./game.ts";
 
 type ID = string;
 
+type RawGameSettings = {
+    secsPerPlayer?: number,
+};
+
 type GameSettings = {
     secsPerPlayer: number,
 };
@@ -48,6 +52,24 @@ export class GameManager {
     // Placeholder ID generator.
     genId(): ID {
         return Math.random().toString().substring(2);
+    }
+
+    // Make sure that the game settings are valid.
+    validateGameSettings(gameSettings?: RawGameSettings): gameSettings is GameSettings {
+        if (gameSettings === undefined) {
+            return false;
+        }
+        if (gameSettings.secsPerPlayer === undefined) {
+            return false;
+        }
+        if (typeof(gameSettings.secsPerPlayer) !== 'number') {
+            return false;
+        }
+        // Only accept times between 1 and 90 minutes.
+        if (gameSettings.secsPerPlayer < 1 * 60 || gameSettings.secsPerPlayer > 90 * 60) {
+            return false;
+        }
+        return true;
     }
 
     // Determines whether the given game ID is being queued.
@@ -226,15 +248,12 @@ export class GameManager {
             this.saveUsernameToRegistry(username);
 
             // When the user queues a new game.
-            socket.on("queue-game", (gameSettings) => {
-
-                // TODO: validate game settings sent from client 
-                //       instead of hardcoding them here
-                const placeholderGameSettings = {
-                    secsPerPlayer: 10 * 60,
-                };
-
-                const gameId = this.createQueuedGame(placeholderGameSettings);
+            socket.on("queue-game", ({ gameSettings }) => {
+                // Game settings must be valid.
+                if (!this.validateGameSettings(gameSettings)) {
+                    return;
+                }
+                const gameId = this.createQueuedGame(gameSettings);
 
                 // Auto-join the user to the game.
                 this.tryJoinPlayerToQueuedGame(username, gameId);

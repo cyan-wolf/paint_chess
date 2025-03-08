@@ -4,22 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Chess | Find Game</title>
+    <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/find-game.css">
+    <link rel="stylesheet" href="/public/styles/nav.css">
 </head>
 <body>
-    <h1>Find Game</h1>
-    <button id="queue-btn">Queue Game</button>
+    <div class="main-container">
+        <nav id="nav" class="nav">
+            <!-- Generated using JavaScript. -->
+        </nav>
 
-    <h1>Current Games</h1>
-    <!-- The games should probably be loaded-in using sockets. -->
-    <div id="game-queue">There are no current games...</div>
+        <div class="center-container">
+            <h1>Find Game</h1>
+            <div class="game-settings">
+                <label for="input-player-mins">Minutes per player: </label>
+                <input type="number" id="input-player-mins" name="input-player-mins" 
+                    value="10" 
+                    min="1"
+                    max="90"
+                    required>
+                <br>
+                
+                <button id="queue-btn">Queue Game</button>
+            </div>
+
+            <h1>Current Games</h1>
+            <!-- The games are loaded-in using sockets. -->
+            <div id="game-queue"></div>
+        </div>
+    </div>
 </body>
+
+<!-- For filling in the nav bar. -->
+<script src="/public/scripts/navbar.js"></script>
+
 <script src="/socket.io/socket.io.js"></script>
+
 <script>
     const socket = io();
 
     // This lets the server know that a game needs to be queued.
     document.getElementById("queue-btn").addEventListener("click", (e) => {
-        socket.emit("queue-game", {});
+        const secsPerPlayer = parseInt(document.getElementById("input-player-mins").value) * 60;
+
+        const gameSettings = {
+            secsPerPlayer,
+        };
+
+        socket.emit("queue-game", { gameSettings });
     });
 
     socket.on("current-game-queue", (gameQueue) => {
@@ -44,8 +76,11 @@
     });
 
     // Request the server for the game queue on page load.
-    window.addEventListener("load", () => {
+    window.addEventListener("load", async () => {
         socket.emit("request-current-game-queue");
+
+        const username = await fetchUsername();
+        fillNav({ username });
     });
 </script>
 </html>
