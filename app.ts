@@ -118,7 +118,8 @@ app.post('/find-game', (req, res) => {
 
 app.get('/current-user-info', (req, res) => {
     if (!req.session.user) {
-        res.status(404).send();
+        res.send(null);
+        return;
     }
     const username = req.session.user.username;
 

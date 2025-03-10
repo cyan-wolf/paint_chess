@@ -61,3 +61,7 @@
 .nav-right a:nth-child(1) {
     --variant-color: rgb(162, 0, 255);
 }
+
+.nav-right a:nth-child(2) {
+    --variant-color: rgb(101, 123, 253);
+}

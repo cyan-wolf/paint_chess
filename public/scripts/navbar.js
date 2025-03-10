@@ -39,6 +39,7 @@ function fillNav(navSettings) {
         right.innerHTML += `<a href="/profile/${username}">${username}</a>`;
     } else {
         right.innerHTML += `<a href="/register">Register</a>`;
+        right.innerHTML += `<a href="/login">Login</a>`;
     }
 
     nav.appendChild(left);

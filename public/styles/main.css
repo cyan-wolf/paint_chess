@@ -9,3 +9,41 @@ body {
     background-color: rgb(136, 136, 136);
 }
 
+.center-container {
+    margin: auto;
+    background-color: rgb(100, 100, 100);
+    width: 50%;
+    height: 40vw;
+    text-align: center;
+}
+
+.center-container h1 {
+    font-size: 60px;
+    margin: auto;
+    background-color: rgb(53, 53, 53);
+}
+
+.center-container h1 span {
+    /* This is changed using JavaScript. */
+    --variant-color: white;
+}
+
+.center-container h1 span:hover {
+    text-shadow: 
+        0 0 30px var(--variant-color), 
+        0 0 40px var(--variant-color), 
+        0 0 50px var(--variant-color);
+}
+
+.center-container button {
+    width: 60%;
+    margin-top: 5%;
+    color: white;
+    background-color: rgb(37, 37, 37);
+    font-size: 50px;
+    border: none;
+}
+
+.center-container button:hover {
+    background-color: rgb(61, 61, 61);
+}

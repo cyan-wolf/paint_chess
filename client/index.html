@@ -3,18 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="public/styles/board.css">
+    <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/nav.css">
+    <!-- <link rel="stylesheet" href="public/styles/board.css"> -->
     <title>Paint Chess | Home</title>
 </head>
 <body>
-    <h1>Paint Chess</h1>
-    <p>Hello World!</p>
-    <ul>
-        <li><a href="/how-to-play">How To Play</a></li>
-        <li><a href="/register">Register</a></li>
-        <li><a href="/login">Login</a></li>
-        <li><a href="/find-game">Find Game</a></li>
-        <li><a href="/logout">Log Out</a></li>
-    </ul>
+    <nav id="nav" class="nav">
+        <!-- Generated using JavaScript. -->
+    </nav>
+
+    <div class="main-container">
+        <div class="center-container">
+            <h1 id="heading-title"><span>Paint</span> <span>Chess</span></h1>
+
+            <a href="/find-game"><button type="button">Play</button></a>
+            <br>
+            <a href="/how-to-play"><button type="button">How to Play</button></a>
+        </div>
+    </div>
+
+    <!-- For filling in the nav bar. -->
+    <script src="/public/scripts/navbar.js"></script>
+
+    <script>
+        // TODO: get this from the server
+        const COLORS = [
+            ["red", "blue"],
+            ["#43eb34", "#c634eb"],
+            ["#ffaa00", "#00fff2"],
+            ["#03fc98", "#fc039d"],
+        ];
+
+        function applyColorToTitle() {
+            const title = document.getElementById("heading-title");
+
+            const randIdx = Math.floor(Math.random() * COLORS.length);
+            const colorPair = COLORS[randIdx];
+
+            for (let i = 0; i < title.children.length; i++) {
+                title.children[i].style.color = colorPair[i];
+                title.children[i].style.setProperty("--variant-color", colorPair[i]);
+            }
+        }
+
+        window.addEventListener("load", async () => {
+            const username = await fetchUsername();
+            fillNav({ username });
+
+            applyColorToTitle();
+        });
+    </script>
 </body>
 </html>
