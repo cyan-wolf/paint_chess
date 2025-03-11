@@ -7,25 +7,42 @@
     <link rel="stylesheet" href="/public/styles/nav.css">
     <title>Paint Chess | Login</title>
 </head>
-<body style="text-align: center;"> <!-- Placeholder styling. -->
-    
+<body>
     <nav id="nav" class="nav">
         <!-- Generated using JavaScript. -->
     </nav>
 
-    <h1>Login</h1>
+    <div class="main-container">
+        <div class="center-container">
+            <h1><span class="glow">Login</span></h1>
 
-    <form action="/login" method="post">
-        <label for="username">Username: </label>
-        <input type="text" name="username" id="username">
-        <br><br>
+            <div class="login-section">
+                <h2>With Account</h2>
 
-        <label for="password">Password: </label>
-        <input type="password" name="password" id="password">
-        <br><br>
+                <form action="/login" method="post">
+                    <label for="username">Username: </label>
+                    <input type="text" name="username" id="username">
+                    <br><br>
+            
+                    <label for="password">Password: </label>
+                    <input type="password" name="password" id="password">
+                    <br><br>
 
-        <button type="submit">Login</button>
-    </form>
+                    <!-- 
+                        Hidden form field to indicate that the user wants to 
+                        login with an account.
+                    -->
+                    <input hidden name="type" id="type" type="text" value="account">
+            
+                    <button class="btn-login" type="submit">Login</button>
+                </form>
+
+                <h2 style="margin-top: 20px;">Or...</h2>
+
+                <button id="btn-login-guest" class="btn-login" type="button">Login as Guest</button>
+            </div>
+        </div>
+    </div>
 
     <!-- For filling in the nav bar. -->
     <script src="/public/scripts/navbar.js"></script>
@@ -34,6 +51,21 @@
         window.addEventListener("load", async () => {
             const username = await fetchUsername();
             fillNav({ username });
+        });
+
+        // Tell the server to login as a guest.
+        document.getElementById("btn-login-guest").addEventListener("click", async () => {
+            const res = await fetch("/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ type: 'guest' }),
+            });
+
+            if (res.redirected) {
+                window.location = res.url;
+            }
         });
     </script>
 </body>

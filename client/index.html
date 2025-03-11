@@ -15,11 +15,11 @@
 
     <div class="main-container">
         <div class="center-container">
-            <h1 id="heading-title"><span>Paint</span> <span>Chess</span></h1>
+            <h1 id="heading-title"><span class="glow">Paint</span> <span class="glow">Chess</span></h1>
 
-            <a href="/find-game"><button type="button">Play</button></a>
+            <a href="/find-game"><button class="btn-title" type="button">Play</button></a>
             <br>
-            <a href="/how-to-play"><button type="button">How to Play</button></a>
+            <a href="/how-to-play"><button class="btn-title" type="button">How to Play</button></a>
         </div>
     </div>
 
@@ -42,7 +42,6 @@
             const colorPair = COLORS[randIdx];
 
             for (let i = 0; i < title.children.length; i++) {
-                title.children[i].style.color = colorPair[i];
                 title.children[i].style.setProperty("--variant-color", colorPair[i]);
             }
         }

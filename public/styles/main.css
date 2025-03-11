@@ -23,19 +23,20 @@ body {
     background-color: rgb(53, 53, 53);
 }
 
-.center-container h1 span {
+.glow {
     /* This is changed using JavaScript. */
     --variant-color: white;
+    color: var(--variant-color);
 }
 
-.center-container h1 span:hover {
+.glow:hover {
     text-shadow: 
         0 0 30px var(--variant-color), 
         0 0 40px var(--variant-color), 
         0 0 50px var(--variant-color);
 }
 
-.center-container button {
+.btn-title {
     width: 60%;
     margin-top: 5%;
     color: white;
@@ -44,6 +45,26 @@ body {
     border: none;
 }
 
-.center-container button:hover {
+.btn-title:hover {
+    background-color: rgb(61, 61, 61);
+}
+
+.login-section {
+    background-color: rgb(172, 172, 172);
+    padding: 20px;
+}
+
+.login-section h2 {
+    margin: 0;
+    margin-bottom: 20px;
+}
+
+.btn-login {
+    color: white;
+    font-size: 20px;
+    background-color: rgb(37, 37, 37);
+}
+
+.btn-login:hover {
     background-color: rgb(61, 61, 61);
 }

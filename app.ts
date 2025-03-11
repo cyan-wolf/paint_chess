@@ -28,6 +28,7 @@ app.use('/public', express.static(path.join(__dirname, "public")));
 
 // Used for reading request bodies as JSON.
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // Used for sessions.
 const sessionMiddleware = session({
@@ -64,11 +65,23 @@ app.get('/how-to-play', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/how-to-play.html"));
 });
 
-app.get('/register', (_req, res) => {
+app.get('/register', (req, res) => {
+    if (req.session.user) {
+        // Cannot register if a session already exists.
+        res.redirect("/");
+        return;
+    }
+
     res.sendFile(path.join(__dirname, "client/register.html"));
 });
 
-app.get('/login', (_req, res) => {
+app.get('/login', (req, res) => {
+    if (req.session.user) {
+        // Cannot login if a session already exists.
+        res.redirect("/");
+        return;
+    }
+
     res.sendFile(path.join(__dirname, "client/login.html"));
 });
 
@@ -86,14 +99,59 @@ app.post('/register', (_req, res) => {
 });
 
 // Placeholder login validator.
-function checkLogin(reqBody: { username: string, password: string }) {
-    return reqBody.username === "user123" && reqBody.password === "123"
-        || reqBody.username === "other_user" && reqBody.password === "456";
+// TODO: use the database
+function checkLogin(username: string, password: string) {
+    return username === "user123" && password === "123"
+        || username === "other_user" && password === "456";
+}
+
+type RawLoginRequest = 
+    | { username?: string, password?: string, type?: "account" }
+    | { type?: "guest" };
+
+const guestUsers = new Set();
+
+// Placeholder ID generator.
+function genId(): string {
+    return Math.random().toString().substring(2);
+}
+
+function handleLogin(reqBody?: RawLoginRequest): User | null {
+    if (reqBody?.type === "account" && reqBody?.username !== undefined && reqBody?.password !== undefined) {
+        const { username, password } = reqBody;
+
+        if (checkLogin(username, password)) {
+            const user = { username };
+            return user;
+        }
+        return null;
+    }
+    else if (reqBody?.type === "guest") {
+        const generatedUsername = `@guest-${genId()}`;
+
+        if (!guestUsers.has(generatedUsername)) {
+            guestUsers.add(generatedUsername);
+
+            const user = { username: generatedUsername };
+            return user;
+        }
+        return null;
+    }
+    else {
+        return null;
+    }
 }
 
 app.post('/login', (req, res) => {
-    if (checkLogin(req.body)) {
-        req.session.user = { username: req.body.username };
+    if (req.session.user) {
+        // Cannot login if a session already exists.
+        return;
+    }
+
+    const user = handleLogin(req.body);
+
+    if (user !== null) {
+        req.session.user = user;
         
         res.redirect('/');
     }
