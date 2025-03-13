@@ -1,4 +1,9 @@
 
+async function initNav() {
+    const username = await fetchUsername();
+    fillNav({ username });
+}
+
 async function fetchUsername() {
     // Get the current user's username from the server.
     try {

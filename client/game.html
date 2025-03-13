@@ -76,7 +76,6 @@
         const globals = {
             board: null,
             timeDisplay: null,
-            username: null,
         };
 
         function updateGameInfoSection(gameInfo) {
@@ -172,9 +171,7 @@
             socket.emit("ready-to-start-game");
             socket.emit("request-current-chat-history");
 
-            globals.username = await fetchUsername();
-
-            fillNav({ username: globals.username });
+            await initNav();
         });
 
         socket.on("game-start", (gameData) => {

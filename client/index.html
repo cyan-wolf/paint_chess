@@ -47,8 +47,7 @@
         }
 
         window.addEventListener("load", async () => {
-            const username = await fetchUsername();
-            fillNav({ username });
+            await initNav();
 
             applyColorToTitle();
         });

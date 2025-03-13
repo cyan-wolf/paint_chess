@@ -79,8 +79,7 @@
     window.addEventListener("load", async () => {
         socket.emit("request-current-game-queue");
 
-        const username = await fetchUsername();
-        fillNav({ username });
+        await initNav();
     });
 </script>
 </html>

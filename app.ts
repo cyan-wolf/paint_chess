@@ -90,11 +90,77 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
         return;
     }
+    // TODO: delete the guest account if a user was using one
+
     req.session.destroy(() => {});
     res.redirect('/');
 });
 
-app.post('/register', (_req, res) => {
+type RawRegisterRequest = {
+    username?: string,
+    displayname?: string,
+    email?: string,
+    password?: string,
+};
+
+type RegisterRequest = {
+    username: string,
+    displayname: string,
+    email: string,
+    password: string,
+};
+
+function checkRegistration(reqBody: RawRegisterRequest): reqBody is RegisterRequest {
+    if (reqBody.username === undefined || 
+        reqBody.displayname === undefined ||
+        reqBody.password === undefined || 
+        reqBody.email === undefined) {
+        return false;
+    }
+    if (!reqBody.username.match(/[A-Za-z\d_]+/) || 
+        reqBody.displayname.trim().length === 0 ||
+        reqBody.password.trim().length === 0 || 
+        reqBody.email.trim().length === 0) {
+        return false;
+    }
+    return true;
+}
+
+app.post('/register', async (req, res) => {
+    const reqBody = req.body;
+
+    if (!checkRegistration(reqBody)) {
+        // Invalid registration.
+        console.log("invalid registration");
+
+        res.redirect("/");
+        return;
+    }
+    const { username, displayname, email, password } = reqBody;
+
+    const userDocument = {
+        username,
+        displayname,
+        email,
+        password,
+        friends: [],
+        elo: 400,
+    };
+
+    console.log(userDocument);
+
+
+    const collection = db.collection("users");
+
+    // if (await collection.findOne({ username })) {
+    //     console.log(`error: user with username ${username} already exists`);
+    //     return;
+    // }
+
+    // TODO: not working
+    await collection.insertOne(userDocument);
+
+    // TODO
     res.send("NOT IMPLEMENTED");
 });
 

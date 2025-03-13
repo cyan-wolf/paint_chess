@@ -49,8 +49,7 @@
 
     <script>
         window.addEventListener("load", async () => {
-            const username = await fetchUsername();
-            fillNav({ username });
+            await initNav();
         });
 
         // Tell the server to login as a guest.
