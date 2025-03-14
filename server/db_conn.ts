@@ -4,17 +4,48 @@ import process from "node:process";
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
-import { MongoClient, ServerApiVersion } from 'npm:mongodb@6.13.0';
-const uri = process.env.ATLAS_URI!;
+import { MongoClient } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version.
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
+const client = new MongoClient();
+
+await client.connect({
+    db: "paint_chess",
+    tls: true,
+    servers: [
+        {
+            host: process.env.ATLAS_HOST!,
+            port: 27017,
+        },
+    ],
+    credential: {
+        username: process.env.ATLAS_USERNAME!,
+        password: process.env.ATLAS_PASSWORD!,
+        db: "paint_chess",
+        mechanism: "SCRAM-SHA-1",
+    },
 });
 
-const db = client.db("paint_chess");
+async function run() {
+    try {
+        const db = client.database("paint_chess");
+        const collections = await db.listCollectionNames();
+
+        if (collections.length > 0) {
+            console.log("Successfully connected to MongoDB.");
+        } else {
+            console.error("Could not connect to MongoDB.");
+        }
+    }
+    catch (err) {
+        console.error(err);
+    }
+    finally {
+        // Ensures that the client will close when you finish/error
+        //client.close();
+    }
+}
+
+run().catch(console.dir);
+
+const db = client.database("paint_chess");
 export default db;

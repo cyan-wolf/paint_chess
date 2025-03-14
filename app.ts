@@ -15,7 +15,9 @@ import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
 import { GameManager } from "./server/game_manager.ts"
+
 import db from "./server/db_conn.ts";
+import { ObjectId } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
 
 const app = express();
 const server = http.createServer(app);
@@ -126,6 +128,16 @@ function checkRegistration(reqBody: RawRegisterRequest): reqBody is RegisterRequ
     return true;
 }
 
+type UserSchema = {
+    _id: ObjectId,
+    username: string,
+    displayname: string,
+    email: string,
+    password: string,
+    friends: string[],
+    elo: number,
+};
+
 app.post('/register', async (req, res) => {
     const reqBody = req.body;
 
@@ -138,30 +150,20 @@ app.post('/register', async (req, res) => {
     }
     const { username, displayname, email, password } = reqBody;
 
-    const userDocument = {
+    const usersCollection = db.collection<UserSchema>("users");
+    await usersCollection.insertOne({
         username,
         displayname,
         email,
+        // TODO: HASH THE PASSWORD BEFORE STORING IT IN THE DB.
         password,
         friends: [],
         elo: 400,
-    };
-
-    console.log(userDocument);
-
-
-    const collection = db.collection("users");
-
-    // if (await collection.findOne({ username })) {
-    //     console.log(`error: user with username ${username} already exists`);
-    //     return;
-    // }
-
-    // TODO: not working
-    await collection.insertOne(userDocument);
+    });
+    console.log(`LOG: registered user ${username}`);
 
     // TODO
-    res.send("NOT IMPLEMENTED");
+    res.send("SUCCESSFULLY REGISTERED");
 });
 
 // Placeholder login validator.
