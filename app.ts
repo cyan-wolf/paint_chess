@@ -19,6 +19,8 @@ import { GameManager } from "./server/game_manager.ts"
 import db from "./server/db_conn.ts";
 import { ObjectId } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
 
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -148,14 +150,25 @@ app.post('/register', async (req, res) => {
         res.redirect("/");
         return;
     }
-    const { username, displayname, email, password } = reqBody;
+    const { username, displayname, email, password: plaintextPassword } = reqBody;
 
     const usersCollection = db.collection<UserSchema>("users");
+
+    // Disallow registration if a user with the given username already exists.
+    if ((await usersCollection.findOne({ username })) !== undefined) {
+        console.log("invalid registration");
+
+        res.redirect("/");
+        return;
+    }
+
+    const salt = await bcrypt.genSalt();
+    const password = await bcrypt.hash(plaintextPassword, salt);
+    
     await usersCollection.insertOne({
         username,
         displayname,
         email,
-        // TODO: HASH THE PASSWORD BEFORE STORING IT IN THE DB.
         password,
         friends: [],
         elo: 400,
@@ -166,11 +179,20 @@ app.post('/register', async (req, res) => {
     res.send("SUCCESSFULLY REGISTERED");
 });
 
-// Placeholder login validator.
-// TODO: use the database
-function checkLogin(username: string, password: string) {
-    return username === "user123" && password === "123"
-        || username === "other_user" && password === "456";
+// Validates the given login credentials.
+async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {
+    const userCollection = db.collection<UserSchema>("users");
+
+    // Usernames are unique.
+    const user = await userCollection.findOne({ username });
+
+    if (user !== undefined) {
+        const validPassword = await bcrypt.compare(plaintextPassword, user.password);
+        if (validPassword) {
+            return true;
+        }
+    }
+    return false;
 }
 
 type RawLoginRequest = 
@@ -184,22 +206,29 @@ function genId(): string {
     return Math.random().toString().substring(2);
 }
 
-function handleLogin(reqBody?: RawLoginRequest): User | null {
+// Tries to generate a login user session with the given credentials.
+async function tryLoginUser(reqBody?: RawLoginRequest): Promise<User | null> {
+    // Client is trying to login with an account.
     if (reqBody?.type === "account" && reqBody?.username !== undefined && reqBody?.password !== undefined) {
         const { username, password } = reqBody;
+        // Validate the provided credentials.
+        const validCredentials = await validateLoginCredentials(username, password);
 
-        if (checkLogin(username, password)) {
+        if (validCredentials) {
+            // Generate user session.
             const user = { username };
             return user;
         }
         return null;
     }
+    // Client is trying to login with a guest account.
     else if (reqBody?.type === "guest") {
         const generatedUsername = `@guest-${genId()}`;
 
         if (!guestUsers.has(generatedUsername)) {
             guestUsers.add(generatedUsername);
 
+            // Generate user session.
             const user = { username: generatedUsername };
             return user;
         }
@@ -210,13 +239,13 @@ function handleLogin(reqBody?: RawLoginRequest): User | null {
     }
 }
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     if (req.session.user) {
         // Cannot login if a session already exists.
         return;
     }
 
-    const user = handleLogin(req.body);
+    const user = await tryLoginUser(req.body);
 
     if (user !== null) {
         req.session.user = user;
