@@ -39,7 +39,22 @@
 
                 <h2 style="margin-top: 20px;">Or...</h2>
 
-                <button id="btn-login-guest" class="btn-login" type="button">Login as Guest</button>
+                <form action="/login" method="post">
+                    <label for="displayname">Display Name: </label>
+                    <input type="text" name="displayname" id="displayname"
+                        min="1"
+                        max="20"
+                        required>
+                    <br><br>
+
+                    <!-- 
+                        Hidden form field to indicate that the user wants to 
+                        login as a guest.
+                    -->
+                    <input hidden name="type" id="type" type="text" value="guest">
+
+                    <button id="btn-login-guest" class="btn-login" type="submit">Login as Guest</button>
+                </form>
             </div>
         </div>
     </div>
@@ -52,20 +67,6 @@
             await initNav();
         });
 
-        // Tell the server to login as a guest.
-        document.getElementById("btn-login-guest").addEventListener("click", async () => {
-            const res = await fetch("/login", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ type: 'guest' }),
-            });
-
-            if (res.redirected) {
-                window.location = res.url;
-            }
-        });
     </script>
 </body>
 </html>

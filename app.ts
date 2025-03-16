@@ -196,10 +196,17 @@ async function validateLoginCredentials(username: string, plaintextPassword: str
 }
 
 type RawLoginRequest = 
-    | { username?: string, password?: string, type?: "account" }
-    | { type?: "guest" };
+    | { type?: "account", username?: string, password?: string }
+    | { type?: "guest", displayname?: string };
 
-const guestUsers = new Set();
+
+type GuestUserDb = {
+    [username: string]: {
+        displayname: string,
+        elo: number,
+    },
+};
+const guestUsers: GuestUserDb = {};
 
 // Placeholder ID generator.
 function genId(): string {
@@ -222,15 +229,22 @@ async function tryLoginUser(reqBody?: RawLoginRequest): Promise<User | null> {
         return null;
     }
     // Client is trying to login with a guest account.
-    else if (reqBody?.type === "guest") {
-        const generatedUsername = `@guest-${genId()}`;
+    else if (reqBody?.type === "guest" && reqBody.displayname !== undefined) {
+        const displayname = reqBody.displayname.trim();
 
-        if (!guestUsers.has(generatedUsername)) {
-            guestUsers.add(generatedUsername);
+        if (displayname.length > 0 && displayname.length <= 20) {
+            const generatedUsername = `@guest-${genId()}`;
 
-            // Generate user session.
-            const user = { username: generatedUsername };
-            return user;
+            if (!Object.hasOwn(guestUsers, generatedUsername)) {
+                guestUsers[generatedUsername] = {
+                    displayname: reqBody.displayname,
+                    elo: 400,
+                };
+
+                // Generate user session.
+                const user = { username: generatedUsername };
+                return user;
+            }
         }
         return null;
     }
@@ -271,17 +285,63 @@ app.post('/find-game', (req, res) => {
     }
 });
 
-app.get('/current-user-info', (req, res) => {
+type PublicUserData = {
+    username: string,
+    displayname: string,
+    elo: number,
+};
+
+// Fetches (public) data from the user with the given username.
+async function fetchUserData(username: string): Promise<PublicUserData | null> {
+    // The username belongs to a guest account.
+    if (username.startsWith("@guest-") && Object.hasOwn(guestUsers, username)) {
+        const userData = {
+            username,
+            displayname: guestUsers[username].displayname,
+            elo: guestUsers[username].elo,
+        };
+        return userData;
+    }
+
+    const usersCollection = db.collection<UserSchema>("users");
+    const user = await usersCollection.findOne({ username });
+
+    // The username belongs to an account in the database.
+    if (user !== undefined) {
+        const userData = {
+            username: user.username,
+            displayname: user.displayname,
+            elo: user.elo,
+        };
+        return userData;
+    }
+
+    // Could not find user data.
+    return null;
+}
+
+app.get('/current-user-info', async (req, res) => {
     if (!req.session.user) {
         res.send(null);
         return;
     }
     const username = req.session.user.username;
 
-    // TODO: connect to database to get more info
-    const userInfo = {
-        username,
-    };
+    const userInfo = await fetchUserData(username);
+    res.send(userInfo);
+});
+
+app.get('/profile/:username', async (req, res) => {
+    const username = req.params.username;
+    
+    const userInfo = await fetchUserData(username);
+
+    if (userInfo === null) {
+        res.send("USER NOT FOUND");
+        return;
+    }
+    
+    // TODO: Use server-side rendering or similar to generate a profile page with the above info.
     res.send(userInfo);
 });
 
