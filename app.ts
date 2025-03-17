@@ -14,12 +14,18 @@ import { Server } from "npm:socket.io@4.8.1";
 import dotenv from "npm:dotenv@16.4.7";
 dotenv.config();
 
+// Manages socket connections to clients.
 import { GameManager } from "./server/game_manager.ts"
 
+// For database access.
 import db from "./server/db_conn.ts";
 import { ObjectId } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
 
+// For hashing passwords.
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+
+// For templating.
+import "npm:hbs@4.2.0";
 
 const app = express();
 const server = http.createServer(app);
@@ -47,6 +53,9 @@ app.use(sessionMiddleware);
 // Makes sessions accessible from socket event handlers.
 io.engine.use(sessionMiddleware);
 
+// Sets the templating engine.
+app.set("view engine", "hbs");
+app.set("views", path.join(__dirname, "client-views"));
 
 type User = {
     username: string
@@ -289,6 +298,7 @@ type PublicUserData = {
     username: string,
     displayname: string,
     elo: number,
+    isGuest: boolean,
 };
 
 // Fetches (public) data from the user with the given username.
@@ -299,6 +309,7 @@ async function fetchUserData(username: string): Promise<PublicUserData | null> {
             username,
             displayname: guestUsers[username].displayname,
             elo: guestUsers[username].elo,
+            isGuest: true,
         };
         return userData;
     }
@@ -312,6 +323,7 @@ async function fetchUserData(username: string): Promise<PublicUserData | null> {
             username: user.username,
             displayname: user.displayname,
             elo: user.elo,
+            isGuest: false,
         };
         return userData;
     }
@@ -340,9 +352,18 @@ app.get('/profile/:username', async (req, res) => {
         res.send("USER NOT FOUND");
         return;
     }
+
+    // TODO: Allow users (with accounts) to customize this.
+    const description = (userInfo.isGuest) ? "This is a guest account." : "This is a user account.";
+
+    // TODO: Add more data to this, like ELO history.
+    const profileInfo = { 
+        description,
+        ...userInfo,
+    };
     
-    // TODO: Use server-side rendering or similar to generate a profile page with the above info.
-    res.send(userInfo);
+    // Use server-side rendering or similar to generate a profile page with the above info.
+    res.render("profile", profileInfo);
 });
 
 app.get('/testing', (_req, res) => {

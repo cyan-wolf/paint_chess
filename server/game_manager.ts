@@ -191,8 +191,7 @@ export class GameManager {
         this.activeGamesDb[gameId] = game;
 
         game.addOnGameEndEventHandler((result) => {
-            console.log("game ended!");
-            console.log(result);
+            console.log(`LOG: game ended: ${JSON.stringify(result)}`);
 
             for (const usernameInGame of game.getUsers()) {
                 const gameData = game.asClientView(usernameInGame);

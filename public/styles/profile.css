@@ -1,0 +1,25 @@
+
+.profile-card {
+    width: 50vw;
+    margin: auto;
+    background-color: rgb(173, 173, 173);
+}
+
+.profile-card .heading-section {
+    background-color: rgb(71, 71, 71);
+}
+
+.profile-card .heading-section h1 {
+    font-size: 4em;
+    margin: 0;
+}
+
+.profile-card .heading-section p {
+    font-size: 2em;
+    margin: 0;
+    margin-top: 10px;
+}
+
+.profile-card .description-section {
+    padding: 20px;
+}
