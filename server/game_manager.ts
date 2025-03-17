@@ -160,6 +160,17 @@ export class GameManager {
         }
     }
 
+    // Calculates the probability of a `rating2` rated player winning 
+    // over a `rating1` rated player.
+    calcWinningProbability(rating1: number, rating2: number): number {
+        return -1;
+    }
+
+    // Determines new ELO ratings.
+    determineEloRatings(ratingP1: number, ratingP2: number, k: number, outcomeValue: number): [number, number] {
+        return [-1, -1];
+    }
+
     // Turns a queued game into an active game.
     createGame(gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
@@ -204,6 +215,9 @@ export class GameManager {
 
                 // Tell the clients to play a "game-end" sound.
                 this.io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
+
+                // TODO: Calculate the new ELO of each player.
+                // ...
 
                 // TODO: add a record of the results of the game to the database
                 // ...
