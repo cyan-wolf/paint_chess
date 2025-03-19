@@ -19,7 +19,12 @@ import { GameManager } from "./server/game_manager.ts"
 
 // For database access.
 import db from "./server/db_conn.ts";
-import { ObjectId } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
+import { UserSchema } from "./server/db_conn_types.d.ts";
+
+// For login management.
+import * as login from "./server/login_management.ts";
+
+import { fetchUserData } from "./server/data_access.ts";
 
 // For hashing passwords.
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
@@ -139,16 +144,6 @@ function checkRegistration(reqBody: RawRegisterRequest): reqBody is RegisterRequ
     return true;
 }
 
-type UserSchema = {
-    _id: ObjectId,
-    username: string,
-    displayname: string,
-    email: string,
-    password: string,
-    friends: string[],
-    elo: number,
-};
-
 app.post('/register', async (req, res) => {
     const reqBody = req.body;
 
@@ -188,87 +183,13 @@ app.post('/register', async (req, res) => {
     res.send("SUCCESSFULLY REGISTERED");
 });
 
-// Validates the given login credentials.
-async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {
-    const userCollection = db.collection<UserSchema>("users");
-
-    // Usernames are unique.
-    const user = await userCollection.findOne({ username });
-
-    if (user !== undefined) {
-        const validPassword = await bcrypt.compare(plaintextPassword, user.password);
-        if (validPassword) {
-            return true;
-        }
-    }
-    return false;
-}
-
-type RawLoginRequest = 
-    | { type?: "account", username?: string, password?: string }
-    | { type?: "guest", displayname?: string };
-
-
-type GuestUserDb = {
-    [username: string]: {
-        displayname: string,
-        elo: number,
-    },
-};
-const guestUsers: GuestUserDb = {};
-
-// Placeholder ID generator.
-function genId(): string {
-    return Math.random().toString().substring(2);
-}
-
-// Tries to generate a login user session with the given credentials.
-async function tryLoginUser(reqBody?: RawLoginRequest): Promise<User | null> {
-    // Client is trying to login with an account.
-    if (reqBody?.type === "account" && reqBody?.username !== undefined && reqBody?.password !== undefined) {
-        const { username, password } = reqBody;
-        // Validate the provided credentials.
-        const validCredentials = await validateLoginCredentials(username, password);
-
-        if (validCredentials) {
-            // Generate user session.
-            const user = { username };
-            return user;
-        }
-        return null;
-    }
-    // Client is trying to login with a guest account.
-    else if (reqBody?.type === "guest" && reqBody.displayname !== undefined) {
-        const displayname = reqBody.displayname.trim();
-
-        if (displayname.length > 0 && displayname.length <= 20) {
-            const generatedUsername = `@guest-${genId()}`;
-
-            if (!Object.hasOwn(guestUsers, generatedUsername)) {
-                guestUsers[generatedUsername] = {
-                    displayname: reqBody.displayname,
-                    elo: 400,
-                };
-
-                // Generate user session.
-                const user = { username: generatedUsername };
-                return user;
-            }
-        }
-        return null;
-    }
-    else {
-        return null;
-    }
-}
-
 app.post('/login', async (req, res) => {
     if (req.session.user) {
         // Cannot login if a session already exists.
         return;
     }
 
-    const user = await tryLoginUser(req.body);
+    const user = await login.tryLoginUser(req.body);
 
     if (user !== null) {
         req.session.user = user;
@@ -293,44 +214,6 @@ app.post('/find-game', (req, res) => {
         res.redirect('/login');
     }
 });
-
-type PublicUserData = {
-    username: string,
-    displayname: string,
-    elo: number,
-    isGuest: boolean,
-};
-
-// Fetches (public) data from the user with the given username.
-async function fetchUserData(username: string): Promise<PublicUserData | null> {
-    // The username belongs to a guest account.
-    if (username.startsWith("@guest-") && Object.hasOwn(guestUsers, username)) {
-        const userData = {
-            username,
-            displayname: guestUsers[username].displayname,
-            elo: guestUsers[username].elo,
-            isGuest: true,
-        };
-        return userData;
-    }
-
-    const usersCollection = db.collection<UserSchema>("users");
-    const user = await usersCollection.findOne({ username });
-
-    // The username belongs to an account in the database.
-    if (user !== undefined) {
-        const userData = {
-            username: user.username,
-            displayname: user.displayname,
-            elo: user.elo,
-            isGuest: false,
-        };
-        return userData;
-    }
-
-    // Could not find user data.
-    return null;
-}
 
 app.get('/current-user-info', async (req, res) => {
     if (!req.session.user) {

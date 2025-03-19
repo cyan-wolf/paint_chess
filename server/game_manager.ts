@@ -1,6 +1,8 @@
 import { Server } from "npm:socket.io@4.8.1";
 import { Game } from "./game.ts";
 
+import { fetchUserData } from "./data_access.ts";
+
 type ID = string;
 
 type RawGameSettings = {
@@ -163,12 +165,42 @@ export class GameManager {
     // Calculates the probability of a `rating2` rated player winning 
     // over a `rating1` rated player.
     calcWinningProbability(rating1: number, rating2: number): number {
-        return -1;
+        return 1.0 / (1 + Math.pow(10, (rating2 - rating1) / 400.0));
     }
 
     // Determines new ELO ratings.
-    determineEloRatings(ratingP1: number, ratingP2: number, k: number, outcomeValue: number): [number, number] {
-        return [-1, -1];
+    determineELORatings(ratingP1: number, ratingP2: number, k: number, outcomeValue: number): [number, number] {
+        const winningProbabilityP1 = this.calcWinningProbability(ratingP2, ratingP1);
+        const winningProbabilityP2 = this.calcWinningProbability(ratingP1, ratingP2);
+
+        const updatedRatingP1 = ratingP1 + k * (outcomeValue - winningProbabilityP1);
+        const updatedRatingP2 = ratingP2 + k * ((1 - outcomeValue) - winningProbabilityP2);
+
+        return [updatedRatingP1, updatedRatingP2];
+    }
+
+    // Determines the associated outcome value based on the game's end result.
+    // Used for calculating ELO.
+    getOutcomeValue(gameResult: GameEndResult): number {
+        if (gameResult.winner === null) {
+            return 0.5; // no winner
+        }
+        else if (gameResult.winner === "p1") {
+            return 1;
+        }
+        else if (gameResult.winner === "p2") {
+            return 0;
+        }
+        else {
+            // Unreachable.
+            throw new Error("Unknown game outcome.");
+        }
+    }
+
+    // Gets the given user's ELO rating.
+    async getUserELO(username: string): Promise<number | undefined> {
+        const user = await fetchUserData(username);
+        return user?.elo;
     }
 
     // Turns a queued game into an active game.
