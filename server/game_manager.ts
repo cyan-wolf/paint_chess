@@ -1,7 +1,7 @@
 import { Server } from "npm:socket.io@4.8.1";
 import { Game } from "./game.ts";
 
-import { fetchUserData } from "./data_access.ts";
+import * as data_access from "./data_access.ts";
 
 type ID = string;
 
@@ -168,8 +168,8 @@ export class GameManager {
         return 1.0 / (1 + Math.pow(10, (rating2 - rating1) / 400.0));
     }
 
-    // Determines new ELO ratings.
-    determineELORatings(ratingP1: number, ratingP2: number, k: number, outcomeValue: number): [number, number] {
+    // Calculate new ELO ratings.
+    calcNewELORatings(ratingP1: number, ratingP2: number, k: number, outcomeValue: number): [number, number] {
         const winningProbabilityP1 = this.calcWinningProbability(ratingP2, ratingP1);
         const winningProbabilityP2 = this.calcWinningProbability(ratingP1, ratingP2);
 
@@ -199,8 +199,29 @@ export class GameManager {
 
     // Gets the given user's ELO rating.
     async getUserELO(username: string): Promise<number | undefined> {
-        const user = await fetchUserData(username);
+        const user = await data_access.fetchUserData(username);
         return user?.elo;
+    }
+
+    // Determines and sets new ELO ratings after a game.
+    async determineELORatings(usernameP1: string, usernameP2: string, gameResult: GameEndResult): Promise<void> {
+        const eloP1 = await this.getUserELO(usernameP1);
+        const eloP2 = await this.getUserELO(usernameP2);
+
+        if (eloP1 === undefined || eloP2 === undefined) {
+            throw new Error("could not compute player ELO");
+        }
+
+        const outcomeValue = this.getOutcomeValue(gameResult);
+        const k = 10;
+
+        const [newEloP1, newEloP2] = this.calcNewELORatings(eloP1, eloP2, k, outcomeValue);
+
+        // Set the updated user ratings.
+        await data_access.setUserELO(usernameP1, newEloP1);
+        await data_access.setUserELO(usernameP2, newEloP2);
+
+        console.log(`LOG: P1 (${newEloP1}), P2 (${newEloP2})`);
     }
 
     // Turns a queued game into an active game.
@@ -236,7 +257,12 @@ export class GameManager {
         game.addOnGameEndEventHandler((result) => {
             console.log(`LOG: game ended: ${JSON.stringify(result)}`);
 
-            for (const usernameInGame of game.getUsers()) {
+            const users = game.getUsers();
+
+            // Determine the new ELO of each player.
+            this.determineELORatings(users[0], users[1], result);
+
+            for (const usernameInGame of users) {
                 const gameData = game.asClientView(usernameInGame);
 
                 // Send the final state of the game to all players before ending the game.
@@ -247,9 +273,6 @@ export class GameManager {
 
                 // Tell the clients to play a "game-end" sound.
                 this.io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
-
-                // TODO: Calculate the new ELO of each player.
-                // ...
 
                 // TODO: add a record of the results of the game to the database
                 // ...

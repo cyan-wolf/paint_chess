@@ -16,25 +16,29 @@ type GuestUserInfo = {
 type GuestUserDb = {
     [username: string]: GuestUserInfo,
 };
-const guestUsers: GuestUserDb = {};
+const guestUsersLocalDb: GuestUserDb = {};
 
-export function guestUsernameAlreadyGenerated(generatedUsername: string): boolean {
-    return Object.hasOwn(guestUsers, generatedUsername);
+function guestUsernameAlreadyGenerated(generatedUsername: string): boolean {
+    return Object.hasOwn(guestUsersLocalDb, generatedUsername);
 }
 
-export function addGuestUser(generatedUsername: string, guestInfo: GuestUserInfo) {
-    guestUsers[generatedUsername] = guestInfo;
+function addGuestUser(generatedUsername: string, guestInfo: GuestUserInfo) {
+    guestUsersLocalDb[generatedUsername] = guestInfo;
+}
+
+function usernameIsGuest(username: string): boolean {
+    return username.startsWith("@guest-") && Object.hasOwn(guestUsersLocalDb, username);
 }
 
 // Fetches (public) data from the user with the given username.
 // The user could be from an account or a guest.
-export async function fetchUserData(username: string): Promise<PublicUserData | null> {
+async function fetchUserData(username: string): Promise<PublicUserData | null> {
     // The username belongs to a guest account.
-    if (username.startsWith("@guest-") && Object.hasOwn(guestUsers, username)) {
+    if (usernameIsGuest(username)) {
         const userData = {
             username,
-            displayname: guestUsers[username].displayname,
-            elo: guestUsers[username].elo,
+            displayname: guestUsersLocalDb[username].displayname,
+            elo: guestUsersLocalDb[username].elo,
             isGuest: true,
         };
         return userData;
@@ -57,3 +61,25 @@ export async function fetchUserData(username: string): Promise<PublicUserData | 
     // Could not find user data.
     return null;
 }
+
+async function setUserELO(username: string, newElo: number) {
+    if (usernameIsGuest(username)) {
+        guestUsersLocalDb[username].elo = newElo;
+    }
+    else {
+        const usersCollection = db.collection<UserSchema>("users");
+        await usersCollection.updateOne(
+            { username }, 
+            { 
+                $set: { elo: newElo }
+            },
+        );
+    }
+}
+
+export {
+    guestUsernameAlreadyGenerated,
+    addGuestUser,
+    fetchUserData,
+    setUserELO,
+};
