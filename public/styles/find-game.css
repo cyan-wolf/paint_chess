@@ -1,4 +1,8 @@
 
+body {
+    color: rgb(202, 202, 202);
+}
+
 .center-container {
     background-color: rgb(94, 94, 94);
     margin-left: auto;
@@ -26,4 +30,27 @@
 
 .game-settings #queue-btn:hover {
     background-color: rgb(61, 61, 61);
+}
+
+#game-queue > div {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    cursor: pointer;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}
+
+#game-queue > div:hover {
+    background-color: rgb(70, 70, 70);
+}
+
+#game-queue > div span {
+    width: 20%;
+    text-align: left;
+}
+
+#game-queue > div span.username {
+    width: 30%;
+
 }

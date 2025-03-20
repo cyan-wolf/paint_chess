@@ -13,12 +13,19 @@ type GameSettings = {
     secsPerPlayer: number,
 };
 
-// Placeholder way of storing game data.
 type GameQueue = {
     [gameId: ID]: {
         waitingPlayers: string[],
         gameSettings: GameSettings,
     }
+};
+
+type QueuedGameClientView = {
+    gameId: ID,
+    waitingUsername: string,
+    waitingDisplayname: string,
+    waitingELO: number,
+    gameMins: number,
 };
 
 type PlayerInfo = {
@@ -144,8 +151,26 @@ export class GameManager {
             return; // ignore attempt if game ID is invalid
         }
         
+        
         if (this.usernameIsQueueingGame(username)) {
-            return; // avoid users that are already queueing
+            // Ignore queue attempt since the player is already
+            // queuing this game.
+            if (this.playerRegistry[username].gameId === gameId) {
+                return;
+            }
+
+            // Dequeue the player if they were already queuing.
+            const playerInfo = this.playerRegistry[username];
+            const oldQueuedGame = this.queuedGamesDb[playerInfo.gameId!];
+
+            // Remove the player from the old queued game.
+            const idx = oldQueuedGame.waitingPlayers.indexOf(username);
+            oldQueuedGame.waitingPlayers.splice(idx, 1);
+
+            // Delete the queued game if it no longer has any players.
+            if (oldQueuedGame.waitingPlayers.length === 0) {
+                delete this.queuedGamesDb[playerInfo.gameId!];
+            }
         }
 
         const queuedGame = this.queuedGamesDb[gameId];
@@ -224,6 +249,36 @@ export class GameManager {
         console.log(`LOG: P1 (${newEloP1}), P2 (${newEloP2})`);
     }
 
+    // Generate a slice of some of the game queues to send to the client in a nice format.
+    async genClientGameQueueSlice(): Promise<QueuedGameClientView[]> {
+        // TODO: randomly shuffle these
+        const queuedGameIds = Object.keys(this.queuedGamesDb).slice(0, 10);
+
+        const clientViews = [];
+
+        for (const gameId of queuedGameIds) {
+            const queuedGame = this.queuedGamesDb[gameId];
+
+            // A queued game has at least 1 waiting player.
+            const waitingUsername = queuedGame.waitingPlayers[0];
+
+            const user = await data_access.fetchUserData(waitingUsername);
+            if (user === null) {
+                throw new Error(`user ${waitingUsername} not found`);
+            }
+
+            const clientView: QueuedGameClientView = {
+                gameId,
+                waitingUsername, 
+                waitingDisplayname: user.displayname,
+                waitingELO: user.elo,
+                gameMins: queuedGame.gameSettings.secsPerPlayer / 60,
+            };
+            clientViews.push(clientView);
+        }
+        return clientViews;
+    }
+
     // Turns a queued game into an active game.
     createGame(gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
@@ -298,7 +353,6 @@ export class GameManager {
     // Manages socket connections.
     connectSockets() {
         const io = this.io;
-        const queuedGamesDb = this.queuedGamesDb;
         const activeGamesDb = this.activeGamesDb;
 
         // Setup sockets.
@@ -316,9 +370,13 @@ export class GameManager {
             this.saveUsernameToRegistry(username);
 
             // When the user queues a new game.
-            socket.on("queue-game", ({ gameSettings }) => {
+            socket.on("queue-game", async ({ gameSettings }) => {
                 // Game settings must be valid.
                 if (!this.validateGameSettings(gameSettings)) {
+                    return;
+                }
+                // Prevent a player that's already queuing from queuing more games.
+                if (this.usernameIsQueueingGame(username)) {
                     return;
                 }
                 const gameId = this.createQueuedGame(gameSettings);
@@ -326,17 +384,17 @@ export class GameManager {
                 // Auto-join the user to the game.
                 this.tryJoinPlayerToQueuedGame(username, gameId);
 
-                io.emit("current-game-queue", queuedGamesDb);
+                io.emit("current-game-queue", await this.genClientGameQueueSlice());
             });
 
-            socket.on("request-current-game-queue", () => {
-                io.to(socket.id).emit("current-game-queue", queuedGamesDb);
+            socket.on("request-current-game-queue", async () => {
+                io.to(socket.id).emit("current-game-queue", await this.genClientGameQueueSlice());
             });
 
-            socket.on("join-game-request", ({ gameId }) => {
+            socket.on("join-game-request", async ({ gameId }) => {
                 this.tryJoinPlayerToQueuedGame(username, gameId);
                 
-                io.emit("current-game-queue", queuedGamesDb);
+                io.emit("current-game-queue", await this.genClientGameQueueSlice());
             });
 
             socket.on("ready-to-start-game", () => {

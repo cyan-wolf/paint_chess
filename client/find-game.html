@@ -54,20 +54,31 @@
         socket.emit("queue-game", { gameSettings });
     });
 
-    socket.on("current-game-queue", (gameQueue) => {
+    socket.on("current-game-queue", (queuedGames) => {
         const gameQueueElem = document.getElementById("game-queue");
         gameQueueElem.innerHTML = "";
 
-        for (const gameId of Object.keys(gameQueue)) {
-            const gameJoinButton = document.createElement("button");
+        for (const queuedGame of queuedGames) {
+            const {
+                gameId,
+                gameMins,
+                waitingUsername,
+                waitingDisplayname,
+                waitingELO,
+            } = queuedGame;
 
-            gameJoinButton.innerHTML = `Join game (${gameQueue[gameId].waitingPlayers.length}/2) [${gameId}]`;
+            const gameJoinElem = document.createElement("div");
+            
+            gameJoinElem.innerHTML += `<span class="username">${waitingUsername}</span>`;
+            gameJoinElem.innerHTML += `<span>${waitingDisplayname}</span>`;
+            gameJoinElem.innerHTML += `<span>(${waitingELO})</span>`;
+            gameJoinElem.innerHTML += `<span>${gameMins}</span>`;
 
-            gameJoinButton.addEventListener("click", (e) => {
+            gameJoinElem.addEventListener("click", () => {
                 socket.emit("join-game-request", { gameId });
             });
 
-            gameQueueElem.appendChild(gameJoinButton);
+            gameQueueElem.appendChild(gameJoinElem);
         }
     });
 
