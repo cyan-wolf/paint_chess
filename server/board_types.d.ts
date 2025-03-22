@@ -53,9 +53,18 @@ type KingCoords = {
     [player in PlayerRole]: Coord
 };
 
+type CastlingData = {
+    [player in PlayerRole]: {
+        kingHasMoved: boolean,
+        leftRookMoved: boolean,
+        rightRookMoved: boolean,
+    }
+};
+
 type GridData = {
-    kingCoords: KingCoords,
     grid: Grid,
+    kingCoords: KingCoords,
+    castlingData: CastlingData,
 };
 
 /**

@@ -12,12 +12,24 @@ export class Board {
 
     constructor() {
         this.gridData = {
+            grid: [],
             kingCoords: {
                 // Placeholder initial values.
                 p1: "",
                 p2: "",
             },
-            grid: [],
+            castlingData: {
+                p1: {
+                    kingHasMoved: false,
+                    leftRookMoved: false,
+                    rightRookMoved: false,
+                },
+                p2: {
+                    kingHasMoved: false,
+                    leftRookMoved: false,
+                    rightRookMoved: false,
+                },
+            },
         };
         this.turn = "p1";
 
@@ -199,27 +211,39 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
         return false;
     }
 
-    // Basic validation for pieces.
-    if (!prelimVerifyMove(fromPos, toPos, gridData.grid)) {
-        return false;
+    const tryingToCastle = detectCastlingAttempt(fromPos, toPos, gridData.grid);
+
+    // Normal movement attempt.
+    if (!tryingToCastle) {
+        // Basic validation for pieces.
+        if (!prelimVerifyMove(fromPos, toPos, gridData.grid)) {
+            return false;
+        }
+
+        // Stops pieces from the same player from capturing each other.
+        if (isFriendlyCapture(fromPos, toPos, gridData.grid)) {
+            return false;
+        }
+
+        const path = getInBetweenPositions(fromPos, toPos);
+
+        if (!pathIsValid(gridData.grid, path)) {
+            return false;
+        }
+
+        // Actually moves the piece and fills in the path it "traversed".
+        // Updates the cached king position if one moved.
+        movePiece(gridData, fromPos, toPos, path);
+    } 
+    // Castling.
+    else {
+        const couldPerformCastling = performCastling(gridData, fromPos, toPos);
+        if (!couldPerformCastling) {
+            return false;
+        }
     }
 
-    // Stops pieces from the same player from capturing each other.
-    if (isFriendlyCapture(fromPos, toPos, gridData.grid)) {
-        return false;
-    }
-
-    const path = getInBetweenPositions(fromPos, toPos);
-
-    if (!pathIsValid(gridData.grid, path)) {
-        return false;
-    }
-
-    // Actually moves the piece and fills in the path it "traversed".
-    // Updates the cached king position if one moved.
-    movePiece(gridData, fromPos, toPos, path);
-
-    //Look for check.
+    // Look for check.
     if (inCheck(gridData, turn)) {
         return false;
     }
@@ -304,10 +328,100 @@ function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: P
 
     grid[toPos[0]][toPos[1]] = slotToMove;
 
-    // Updates the cached king position (if one moved).
     if (slotToMove.piece === "king") {
+        // Updates the cached king position (if one moved).
         gridData.kingCoords[slotToMove.player!] = rowColToChessCoord(toPos);
+
+        // Mark the king as having moved (prevents castling).
+        gridData.castlingData[slotToMove.player!].kingHasMoved = true;
     }
+    else if (slotToMove.piece === "rook") {
+        const [_, col] = fromPos;
+
+        // Mark the respective rook as having moved (prevents castling).
+        if (col === 0) {
+            gridData.castlingData[slotToMove.player!].leftRookMoved = true;
+        } 
+        else if (col === 7) {
+            gridData.castlingData[slotToMove.player!].rightRookMoved = true;
+        }
+    }
+}
+
+function detectCastlingAttempt(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
+    const slotToMove = getSlot(grid, fromPos);
+    const selectedSlot = getSlot(grid, toPos);
+
+    return slotToMove.piece === "king" && 
+        selectedSlot.piece === "rook" && 
+        slotToMove.player === selectedSlot.player;
+}
+
+function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean {
+    const kingSlot = getSlot(gridData.grid, fromPos);
+    const player = kingSlot.player!;
+
+    if (gridData.castlingData[player].kingHasMoved) {
+        return false;
+    }
+
+    const [rookRow, rookCol] = toPos;
+    
+    let kingDestPos: Pos;
+    let kingPath: Pos[];
+    const rookStartPos = toPos;
+    let rookEndPos: Pos;
+
+    if (rookCol === 0) {
+        if (gridData.castlingData[player].leftRookMoved) {
+            return false;
+        }
+        kingDestPos = [rookRow, fromPos[1] - 2];
+        kingPath = getInBetweenPositions(fromPos, kingDestPos);
+        rookEndPos = [rookRow, rookCol + 3];
+    }
+    else if (rookCol === 7) {
+        if (gridData.castlingData[player].rightRookMoved) {
+            return false;
+        }
+        kingDestPos = [rookRow, fromPos[1] + 3];
+        kingPath = getInBetweenPositions(fromPos, kingDestPos);
+        rookEndPos = [rookRow, rookCol - 2];
+    }
+    else {
+        // Unreachable (?).
+        return false;
+    }
+
+    // TODO: Verify if the king has a safe path to the castling destination (i.e. isn't in check along the way).
+    // ...
+
+    // Stop the king from going through pieces.
+    if (!pathIsValid(gridData.grid, kingPath)) {
+        return false;
+    }
+
+    // Check if the path is open between the rook and the king's future position.
+    const verificationRookPath = getInBetweenPositions(rookStartPos, kingDestPos);
+    if (!pathIsValid(gridData.grid, verificationRookPath)) {
+        return false;
+    }
+
+    // Move the rook.
+    const actualRookPath = getInBetweenPositions(rookStartPos, rookEndPos);
+    
+    // Forcefully move the rook without checking the path.
+    movePiece(gridData, rookStartPos, rookEndPos, actualRookPath);
+
+    // Teleport the king to the correct position.
+    gridData.grid[kingDestPos[0]][kingDestPos[1]] = kingSlot;
+
+    // Delete the old slot's king.
+    const emptySlot = newEmptySlot();
+    emptySlot.turf = player;
+    gridData.grid[fromPos[0]][fromPos[1]] = emptySlot;
+
+    return true;
 }
 
 // Does basic (preliminary) validation for pieces.

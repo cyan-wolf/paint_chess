@@ -32,13 +32,20 @@ function usernameIsGuest(username: string): boolean {
 
 // Fetches (public) data from the user with the given username.
 // The user could be from an account or a guest.
-async function fetchUserData(username: string): Promise<PublicUserData | null> {
+async function fetchUserData(username: string, roundElo?: boolean): Promise<PublicUserData | null> {
+    if (roundElo === undefined) {
+        // Round the ELO by default.
+        roundElo = true;
+    }
+    
     // The username belongs to a guest account.
     if (usernameIsGuest(username)) {
+        const elo = guestUsersLocalDb[username].elo;
+
         const userData = {
             username,
             displayname: guestUsersLocalDb[username].displayname,
-            elo: guestUsersLocalDb[username].elo,
+            elo: (roundElo) ? Math.floor(elo) : elo,
             isGuest: true,
         };
         return userData;
@@ -49,10 +56,12 @@ async function fetchUserData(username: string): Promise<PublicUserData | null> {
 
     // The username belongs to an account in the database.
     if (user !== undefined) {
+        const elo = user.elo;
+
         const userData = {
             username: user.username,
             displayname: user.displayname,
-            elo: user.elo,
+            elo: (roundElo) ? Math.floor(elo) : elo,
             isGuest: false,
         };
         return userData;

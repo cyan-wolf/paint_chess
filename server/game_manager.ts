@@ -151,7 +151,6 @@ export class GameManager {
             return; // ignore attempt if game ID is invalid
         }
         
-        
         if (this.usernameIsQueueingGame(username)) {
             // Ignore queue attempt since the player is already
             // queuing this game.
@@ -224,7 +223,7 @@ export class GameManager {
 
     // Gets the given user's ELO rating.
     async getUserELO(username: string): Promise<number | undefined> {
-        const user = await data_access.fetchUserData(username);
+        const user = await data_access.fetchUserData(username, false);
         return user?.elo;
     }
 
@@ -289,10 +288,6 @@ export class GameManager {
 
         // Remove game from queue.
         delete this.queuedGamesDb[gameId];
-
-        // Unnecessary?
-        // this.playerRegistry[usernameP1].joined = false;
-        // this.playerRegistry[usernameP2].joined = false;
 
         for (const queuedUsername of queuedGame.waitingPlayers) {
             this.playerRegistry[queuedUsername].queueing = false;
