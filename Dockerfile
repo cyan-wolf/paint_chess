@@ -1,4 +1,4 @@
-FROM denoland/deno:2.1.9
+FROM denoland/deno:latest
 
 # WORKDIR /app
 
@@ -7,5 +7,8 @@ USER deno
 
 # These steps will be re-run upon each file change in your working directory:
 ADD . .
+
+# Compile the main app
+RUN deno cache main.ts
 
 CMD ["run", "--cached-only", "--allow-net", "app.ts"]
