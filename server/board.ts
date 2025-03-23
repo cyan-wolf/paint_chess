@@ -379,6 +379,8 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingDestPos = [rookRow, fromPos[1] - 2];
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol + 3];
+
+        gridData.castlingData[player].leftRookMoved = true;
     }
     else if (rookCol === 7) {
         if (gridData.castlingData[player].rightRookMoved) {
@@ -387,14 +389,38 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingDestPos = [rookRow, fromPos[1] + 2];
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol - 2];
+
+        gridData.castlingData[player].rightRookMoved = true;
     }
     else {
         // Unreachable (?).
         return false;
     }
 
-    // TODO: Verify if the king has a safe path to the castling destination (i.e. isn't in check along the way).
-    // ...
+    // Verify if the king has a safe path to the castling destination 
+    // (i.e. isn't in check along the way).
+    for (const pos of kingPath) {
+        const virtualGridData = structuredClone(gridData);
+        const virtualMove: Move = {
+            from: rowColToChessCoord(fromPos),
+            to: rowColToChessCoord(pos),
+            player: kingSlot.player!,
+        };
+        const couldMove = performVirtualMove(virtualMove, kingSlot.player!, virtualGridData);
+
+        // console.log(pos);
+        // console.log(couldMove);
+
+        // TODO: this isn't working because the kingPath
+        // includes the king's current position, 
+        // which is automatically an illegal move since 
+        // the king can't move to it's current position.
+
+        // // Used to detect if the king was in check.
+        // if (!couldMove) {
+        //     return false;
+        // }
+    }
 
     // Stop the king from going through pieces.
     if (!pathIsValid(gridData.grid, kingPath)) {
@@ -420,6 +446,7 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
 
     // Teleport the king to the correct position.
     gridData.grid[kingDestPos[0]][kingDestPos[1]] = kingSlot;
+    gridData.castlingData[player].kingHasMoved = true;
 
     // Delete the old slot's king.
     const emptySlot = newEmptySlot();
