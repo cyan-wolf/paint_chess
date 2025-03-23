@@ -384,7 +384,7 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         if (gridData.castlingData[player].rightRookMoved) {
             return false;
         }
-        kingDestPos = [rookRow, fromPos[1] + 3];
+        kingDestPos = [rookRow, fromPos[1] + 2];
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol - 2];
     }
@@ -398,6 +398,11 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
 
     // Stop the king from going through pieces.
     if (!pathIsValid(gridData.grid, kingPath)) {
+        return false;
+    }
+
+    // Stop the king from accidentally capturing a friendly piece.
+    if (isFriendlyCapture(fromPos, kingDestPos, gridData.grid)) {
         return false;
     }
 
