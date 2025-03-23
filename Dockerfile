@@ -11,4 +11,4 @@ ADD . .
 # Compile the main app
 RUN deno cache main.ts
 
-CMD ["run", "--allow-net", "--allow-env", "app.ts"]
+CMD ["run", "--allow-net", "--allow-env", "--allow-read", "app.ts"]
