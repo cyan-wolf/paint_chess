@@ -26,6 +26,9 @@ body {
     display: flex;
     flex-direction: column;
     width: 20vw;
+
+    /* Stops the game area from changing height when loading in. */
+    min-height: 560px;
 }
 
 #game-info {
