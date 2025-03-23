@@ -6,20 +6,27 @@ dotenv.config();
 
 import { MongoClient } from "https://deno.land/x/mongo@v0.34.0/mod.ts";
 
+import assert from "node:assert";
+
 const client = new MongoClient();
+
+// Assert that environment variables are present.
+assert(process.env.ATLAS_HOST !== undefined);
+assert(process.env.ATLAS_USERNAME !== undefined);
+assert(process.env.ATLAS_PASSWORD !== undefined);
 
 await client.connect({
     db: "paint_chess",
     tls: true,
     servers: [
         {
-            host: process.env.ATLAS_HOST!,
+            host: process.env.ATLAS_HOST,
             port: 27017,
         },
     ],
     credential: {
-        username: process.env.ATLAS_USERNAME!,
-        password: process.env.ATLAS_PASSWORD!,
+        username: process.env.ATLAS_USERNAME,
+        password: process.env.ATLAS_PASSWORD,
         db: "paint_chess",
         mechanism: "SCRAM-SHA-1",
     },

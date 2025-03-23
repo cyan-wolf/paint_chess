@@ -32,6 +32,8 @@ import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 // For templating.
 import "npm:hbs@4.2.0";
 
+import assert from "node:assert";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -46,8 +48,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Used for sessions.
+assert(process.env.EXPRESS_SECRET !== undefined);
+
 const sessionMiddleware = session({
-    secret: process.env.EXPRESS_SECRET!,
+    secret: process.env.EXPRESS_SECRET,
     resave: false,
     saveUninitialized: false,
 });
