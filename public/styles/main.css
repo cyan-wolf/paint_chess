@@ -68,3 +68,10 @@ body {
 .btn-login:hover {
     background-color: rgb(61, 61, 61);
 }
+
+@media screen and (orientation: portrait) {
+    .center-container {
+        width: 90%;
+        height: 100vw;
+    }
+}

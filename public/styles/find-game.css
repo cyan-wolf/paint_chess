@@ -54,3 +54,14 @@ body {
     width: 30%;
 
 }
+
+@media screen and (orientation: portrait) {
+    .center-container {
+        width: 90%;
+        height: 100%;
+    }
+
+    #game-queue > div span.username {
+        display: none;
+    }
+}
