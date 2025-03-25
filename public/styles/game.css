@@ -81,6 +81,11 @@ body {
     outline: none;
 }
 
+.game-area {
+    width: 600px;
+    /* background-color: rgb(108, 24, 253); */
+}
+
 .right-area {
     display: flex;
     flex-direction: column;

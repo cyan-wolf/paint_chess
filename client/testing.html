@@ -13,7 +13,7 @@
     <script src="/public/scripts/board.js"></script>
     <script>
         const mainBoardElem = document.getElementById("main-board");
-
+ 
         // TODO: All this information (besides element and clickable), is supposed
         // to come from the server.
         const board = new Board({
@@ -36,6 +36,7 @@
 
         // TODO: The board descriptions are supposed to come from the server.
         board.update(genInitialChessBoardDesc());
+        loadPieces();
 
         // TODO: Use sockets to let the server know that this coordinate 
         // was clicked.
