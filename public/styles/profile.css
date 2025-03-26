@@ -23,3 +23,9 @@
 .profile-card .description-section {
     padding: 20px;
 }
+
+@media screen and (orientation: portrait) {
+    .profile-card {
+        width: 90vw;
+    }
+}
