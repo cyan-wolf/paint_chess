@@ -7,6 +7,7 @@ export class Board {
 
     // Used for reporting purposes, not for actual logic.
     checkStatus: CheckStatus
+    lastChangedCoords: Set<Coord>
 
     boardEventListeners: BoardEventListener[]
 
@@ -34,6 +35,7 @@ export class Board {
         this.turn = "p1";
 
         this.checkStatus = null;
+        this.lastChangedCoords = new Set();
 
         this.boardEventListeners = [];
 
@@ -73,6 +75,13 @@ export class Board {
 
         // Reset check status (used for reporting).
         this.checkStatus = null;
+
+        // Reset the last moved coords (used for reporting).
+        this.lastChangedCoords.clear();
+        this.lastChangedCoords.add(move.from);
+        this.lastChangedCoords.add(move.to);
+
+        //console.log(this.lastChangedCoords);
 
         // Debug:
         // Gen the other player's legal moves.

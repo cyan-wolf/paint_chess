@@ -97,6 +97,9 @@
             // current board from the server.
             globals.board.update(gameData.boardDesc);
 
+            // Display the last changed coords.
+            globals.board.displayLastChangedCoords(gameData.lastChangedCoords);
+
             // Load piece SVGs.
             loadPieces();
 

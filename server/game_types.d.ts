@@ -67,6 +67,7 @@ type GameViewForClient = {
         }
     },
     checkStatus: CheckStatus,
+    lastChangedCoords: Coord[],
 };
 
 /**

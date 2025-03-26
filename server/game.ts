@@ -156,8 +156,8 @@ export class Game {
             boardDesc: this.board.toBoardDesc(),
             timeDesc,
             checkStatus: structuredClone(this.board.checkStatus),
+            lastChangedCoords: Array.from(this.board.lastChangedCoords),
         };
-
         return data;
     }
 

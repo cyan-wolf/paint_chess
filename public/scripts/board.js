@@ -94,6 +94,9 @@ class Board {
         // Deselect slots.
         this.deselectAllSlots();
 
+        // Remove extra marks from slots.
+        this.removeAllSlotMarks();
+
         for (let index = 0; index < 8 * 8; index++) {
             // Calculate the row and column using the index.
             const row = Math.floor(index / 8);
@@ -127,6 +130,17 @@ class Board {
         this.boardPositions[chessCoord].classList.add("selected");
     }
 
+    removeAllSlotMarks() {
+        for (let index = 0; index < 8 * 8; index++) {
+            const slotElem = this.boardElem.children[index];
+            slotElem.classList.remove("lastChanged");
+        }
+    }
+
+    markSlotAsLastChanged(chessCoord) {
+        this.boardPositions[chessCoord].classList.add("lastChanged");
+    }
+
     slotShouldBeSelectable(chessCoord) {
         return this.hasPieceAtCoord(chessCoord);
     }
@@ -156,6 +170,12 @@ class Board {
                 const pieceColor = this.colorConfig[player]["piece"];
                 pieceElem.classList = `piece ${piece} ${pieceColor}`;
             }
+        }
+    }
+
+    displayLastChangedCoords(lastChangedCoords) {
+        for (const coord of lastChangedCoords) {
+            this.markSlotAsLastChanged(coord);
         }
     }
 

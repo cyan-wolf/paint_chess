@@ -7,15 +7,15 @@
     <link rel="stylesheet" href="/public/styles/board.css">
 </head>
 <body>
-    <div class="board" id="main-board"></div>
+    <div style="width: 500px; margin: auto;">
+        <div class="board" id="main-board"></div>
+    </div>
 
     <script src="/public/scripts/load_pieces.js"></script>
     <script src="/public/scripts/board.js"></script>
     <script>
         const mainBoardElem = document.getElementById("main-board");
  
-        // TODO: All this information (besides element and clickable), is supposed
-        // to come from the server.
         const board = new Board({
             element: mainBoardElem,
             isFlipped: false,
