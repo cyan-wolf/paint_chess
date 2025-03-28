@@ -66,8 +66,10 @@ type GameViewForClient = {
             isTicking: boolean,
         }
     },
+    ownRole: PlayerRole,
     checkStatus: CheckStatus,
     lastChangedCoords: Coord[],
+    legalMovesRundown?: LegalMovesRundown,
 };
 
 /**

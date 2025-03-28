@@ -91,6 +91,12 @@ type BoardRundown = {
     }
 };
 
+type LegalMovesRundown = {
+    [player in PlayerRole]: {
+        [coord: Coord]: Coord[],
+    }
+};
+
 /**
  * Used for telling the client whether a player is in check or not.
  */

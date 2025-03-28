@@ -8,6 +8,7 @@ export class Board {
     // Used for reporting purposes, not for actual logic.
     checkStatus: CheckStatus
     lastChangedCoords: Set<Coord>
+    legalMovesRundown?: LegalMovesRundown
 
     boardEventListeners: BoardEventListener[]
 
@@ -36,6 +37,7 @@ export class Board {
 
         this.checkStatus = null;
         this.lastChangedCoords = new Set();
+        this.legalMovesRundown = undefined;
 
         this.boardEventListeners = [];
 
@@ -81,15 +83,15 @@ export class Board {
         this.lastChangedCoords.add(move.from);
         this.lastChangedCoords.add(move.to);
 
-        //console.log(this.lastChangedCoords);
+        // Generate the current rundown of each piece's legal moves.
+        const currLegalBoardRundown = genLegalMovesBoardRundown(this.gridData);
 
-        // Debug:
-        // Gen the other player's legal moves.
-        // console.log(`${this.turn} legal moves: `, genLegalMoves(this.gridData, this.turn));
+        // Set the legal moves rundown (used for reporting).
+        this.legalMovesRundown = currLegalBoardRundown;
 
         // Verify if the other player is in check (for alerting the players of the check).
         const otherPlayerChecked = inCheck(this.gridData, this.turn);
-        const otherPlayerMoveless = outOfLegalMoves(this.gridData, this.turn);
+        const otherPlayerMoveless = outOfLegalMoves(this.gridData, this.turn, currLegalBoardRundown);
 
         if (otherPlayerChecked && otherPlayerMoveless) {
             const winningPlayer = Game.togglePlayerRole(this.turn);
@@ -709,15 +711,6 @@ function toBoardRundown(grid: Grid): BoardRundown {
 function inCheck(gridData: GridData, player: PlayerRole) {
     const rundown = toBoardRundown(gridData.grid);
 
-    // DEBUG:
-    // for (const role of Object.keys(rundown)) {
-    //     console.log(`${role} RUNDOWN: `);
-    //     for (const coord of Object.keys(rundown[role as PlayerRole])) {
-    //         console.log(`${coord}: ${getSlot(gridData.grid, chessCoordToRowCol(coord)).piece}`);
-    //         console.log(rundown[role as PlayerRole][coord].attacking);
-    //     }
-    // }
-
     const otherPlayer = Game.togglePlayerRole(player);
 
     for (const pieceCoord of Object.keys(rundown[otherPlayer])) {
@@ -765,34 +758,57 @@ function genPossibleLandingCoords(pieceCoord: Coord, player: PlayerRole, grid: G
     return possibleOwnLandingCoords;
 }
 
-function genLegalMoves(gridData: GridData, player: PlayerRole): Move[] {
-    const moves: Move[] = [];
-
+function genLegalMovesBoardRundown(gridData: GridData, onlyForPlayer?: PlayerRole): LegalMovesRundown {
     const rundown = toBoardRundown(gridData.grid);
 
-    for (const ownPieceCoord of Object.keys(rundown[player])) {
-        const possibleOwnLandingCoords = genPossibleLandingCoords(ownPieceCoord, player, gridData.grid, rundown);
+    const legalMovesRundown: LegalMovesRundown = {
+        "p1": {},
+        "p2": {},
+    };
 
-        for (const landingCoord of possibleOwnLandingCoords) {
-            const move: Move = {
-                from: ownPieceCoord,
-                to: landingCoord,
-                player,
-            };
+    for (const role of ["p1", "p2"]) {
+        const player = role as PlayerRole;
 
-            const couldMove = performVirtualMove(move, player, structuredClone(gridData));
-            if (couldMove) {
-                moves.push(move);
+        if (onlyForPlayer !== undefined) {
+            if (player !== onlyForPlayer) {
+                continue;
+            }
+        }
+
+        for (const ownPieceCoord of Object.keys(rundown[player as PlayerRole])) {
+            const possibleOwnLandingCoords = genPossibleLandingCoords(ownPieceCoord, player, gridData.grid, rundown);
+    
+            for (const landingCoord of possibleOwnLandingCoords) {
+                const move: Move = {
+                    from: ownPieceCoord,
+                    to: landingCoord,
+                    player,
+                };
+    
+                const couldMove = performVirtualMove(move, player, structuredClone(gridData));
+                if (couldMove) {
+                    if (legalMovesRundown[player][ownPieceCoord] === undefined) {
+                        legalMovesRundown[player][ownPieceCoord] = [];
+                    }
+                    legalMovesRundown[player][ownPieceCoord].push(landingCoord);
+                }
             }
         }
     }
-    return moves;
+    return legalMovesRundown;
 }
 
 // Determines whether the given player can perform any moves without being in check.
 // If there are no legal moves, then there is a stalemate.
-function outOfLegalMoves(gridData: GridData, player: PlayerRole): boolean {
-    return genLegalMoves(gridData, player).length === 0;
+function outOfLegalMoves(gridData: GridData, player: PlayerRole, legalMovesRundown: LegalMovesRundown): boolean {
+    for (const coord of Object.keys(legalMovesRundown[player])) {
+        const moveAmt = legalMovesRundown[player][coord].length;
+
+        if (moveAmt > 0) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // Gets a slot from the grid at the given position (without validation).

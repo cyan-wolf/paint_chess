@@ -93,12 +93,8 @@
         }
 
         function updateClientState(gameData) {
-            // Update the board using a description of the 
-            // current board from the server.
-            globals.board.update(gameData.boardDesc);
-
-            // Display the last changed coords.
-            globals.board.displayLastChangedCoords(gameData.lastChangedCoords);
+            // Update the board using the game data from the server.
+            globals.board.update(gameData);
 
             // Load piece SVGs.
             loadPieces();

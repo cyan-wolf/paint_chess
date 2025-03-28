@@ -79,6 +79,14 @@ class Board {
                 // Reset the last clicked coord.
                 this.lastClickedCoord = null;
                 this.deselectAllSlots();
+
+                this.removeAllSlotMarks();
+                // Show the last changed coords again after a delay.
+                setTimeout(() => {
+                    if (this.lastClickedCoord === null) {
+                        this.displayLastChangedCoords();
+                    }
+                }, 2000);
             }
         });
 
@@ -128,12 +136,20 @@ class Board {
     selectSlot(chessCoord) {
         this.deselectAllSlots();
         this.boardPositions[chessCoord].classList.add("selected");
+
+        this.removeAllSlotMarks();
+
+        const legalLandings = this.legalMovesRundown[this.ownRole][chessCoord];
+        for (const landingCoord of legalLandings) {
+            this.boardPositions[landingCoord].classList.add("isLanding");
+        }
     }
 
     removeAllSlotMarks() {
         for (let index = 0; index < 8 * 8; index++) {
             const slotElem = this.boardElem.children[index];
             slotElem.classList.remove("lastChanged");
+            slotElem.classList.remove("isLanding");
         }
     }
 
@@ -142,22 +158,35 @@ class Board {
     }
 
     slotShouldBeSelectable(chessCoord) {
-        return this.hasPieceAtCoord(chessCoord);
+        return this.hasPieceAtCoord(chessCoord) && 
+            this.boardDesc[chessCoord].player === this.ownRole;
     }
+
+    update(gameData) {
+        this.boardDesc = gameData.boardDesc;
+        this.updateBoard();
+
+        this.ownRole = gameData.ownRole;
+
+        this.lastChangedCoords = gameData.lastChangedCoords;
+        this.displayLastChangedCoords();
+
+        this.legalMovesRundown = gameData.legalMovesRundown;
+    }   
 
     // Updates the board using a board description object.
     // * The board positons object maps chess coordinates to actual slots on the board.
     // * The board description object maps chess coordinates to a physical (type/color) 
     //   description of the piece that should be at that position.
-    update(boardDesc) {
+    updateBoard() {
         // Clear the board before updating it.
         this.clear();
 
-        for (const coord of Object.keys(boardDesc)) {
+        for (const coord of Object.keys(this.boardDesc)) {
             const slotElem = this.boardPositions[coord];
             const pieceElem = slotElem.children[0];
 
-            const { piece, player, turf } = boardDesc[coord];
+            const { piece, player, turf } = this.boardDesc[coord];
             
             const turfColor = slotAtCoordShouldBeLight(coord) ? 
                 this.colorConfig[turf]["bgLight"] 
@@ -173,8 +202,8 @@ class Board {
         }
     }
 
-    displayLastChangedCoords(lastChangedCoords) {
-        for (const coord of lastChangedCoords) {
+    displayLastChangedCoords() {
+        for (const coord of this.lastChangedCoords) {
             this.markSlotAsLastChanged(coord);
         }
     }
