@@ -84,7 +84,7 @@ export class Board {
         this.lastChangedCoords.add(move.to);
 
         // Generate the current rundown of each piece's legal moves.
-        const currLegalBoardRundown = genLegalMovesBoardRundown(this.gridData);
+        const currLegalBoardRundown = genLegalMovesRundown(this.gridData);
 
         // Set the legal moves rundown (used for reporting).
         this.legalMovesRundown = currLegalBoardRundown;
@@ -750,6 +750,24 @@ function genPossibleLandingCoords(pieceCoord: Coord, player: PlayerRole, grid: G
             }  
             break;
         }
+        case "king": {
+            possibleOwnLandingCoords = rundown[player][pieceCoord].attacking;
+
+            const kingPos = chessCoordToRowCol(pieceCoord);
+            const rookCastlingPositions = [
+                // Left rook.
+                [kingPos[0], kingPos[1] - 4],
+
+                // Right rook.
+                [kingPos[0], kingPos[1] + 3],
+            ];
+
+            // Add the castling rook coords to the king's possible "landing" coords.
+            for (const rookPos of rookCastlingPositions) {
+                possibleOwnLandingCoords.add(rowColToChessCoord(rookPos as Pos));
+            }
+            break;
+        }
 
         default:
             possibleOwnLandingCoords = rundown[player][pieceCoord].attacking;
@@ -758,7 +776,7 @@ function genPossibleLandingCoords(pieceCoord: Coord, player: PlayerRole, grid: G
     return possibleOwnLandingCoords;
 }
 
-function genLegalMovesBoardRundown(gridData: GridData, onlyForPlayer?: PlayerRole): LegalMovesRundown {
+function genLegalMovesRundown(gridData: GridData, onlyForPlayer?: PlayerRole): LegalMovesRundown {
     const rundown = toBoardRundown(gridData.grid);
 
     const legalMovesRundown: LegalMovesRundown = {
