@@ -245,7 +245,10 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
         // Actually moves the piece and fills in the path it "traversed".
         // Updates the cached king position if one moved.
         movePiece(gridData, fromPos, toPos, path);
-    } 
+
+        // Handle pawn promotion.
+        promotePawnIfNeeded(gridData, slotToMove, toPos);
+    }
     // Castling.
     else {
         const couldPerformCastling = performCastling(gridData, fromPos, toPos);
@@ -355,6 +358,23 @@ function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: P
         } 
         else if (col === 7) {
             gridData.castlingData[slotToMove.player!].rightRookMoved = true;
+        }
+    }
+}
+
+function promotePawnIfNeeded(gridData: GridData, slotToMove: Slot, toPos: Pos) {
+    // TODO: allow the pawn to promote to other pieces besides into queens.
+    const promotionPiece: Piece = "queen";
+
+    if (slotToMove.piece === "pawn") {
+        const reachedRank = toPos[0];
+        const reachedLastRank = (slotToMove.player === "p1") ?  
+            (reachedRank === 0) : (reachedRank === 7);
+
+        if (reachedLastRank) {
+            // By this point, the pawn has already reached `toPos`.
+            // Promote (mutate) the piece at `toPos` on the spot.
+            getSlot(gridData.grid, toPos).piece = promotionPiece;
         }
     }
 }
