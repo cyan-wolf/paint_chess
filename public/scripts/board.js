@@ -81,10 +81,11 @@ class Board {
                 this.deselectAllSlots();
 
                 this.removeAllSlotMarks();
-                // Show the last changed coords again after a delay.
+                // Show the last changed coords along with check info again after a delay.
                 setTimeout(() => {
                     if (this.lastClickedCoord === null) {
                         this.displayLastChangedCoords();
+                        this.displayCheckStatus();
                     }
                 }, 2000);
             }
@@ -150,6 +151,7 @@ class Board {
             const slotElem = this.boardElem.children[index];
             slotElem.classList.remove("lastChanged");
             slotElem.classList.remove("isLanding");
+            slotElem.classList.remove("checkedKing");
         }
     }
 
@@ -172,6 +174,9 @@ class Board {
         this.displayLastChangedCoords();
 
         this.legalMovesRundown = gameData.legalMovesRundown;
+
+        this.checkStatus = gameData.checkStatus;
+        this.displayCheckStatus();
     }   
 
     // Updates the board using a board description object.
@@ -200,6 +205,14 @@ class Board {
                 pieceElem.classList = `piece ${piece} ${pieceColor}`;
             }
         }
+    }
+
+    displayCheckStatus() {
+        if (this.checkStatus === null) {
+            return;
+        }
+        const checkedKingSlot = this.boardPositions[this.checkStatus.kingCoord];
+        checkedKingSlot.classList.add("checkedKing");
     }
 
     displayLastChangedCoords() {
