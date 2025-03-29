@@ -247,7 +247,7 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
         movePiece(gridData, fromPos, toPos, path);
 
         // Handle pawn promotion.
-        promotePawnIfNeeded(gridData, slotToMove, toPos);
+        promotePawnIfNeeded(gridData, slotToMove, toPos, move.promotion);
     }
     // Castling.
     else {
@@ -362,9 +362,8 @@ function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: P
     }
 }
 
-function promotePawnIfNeeded(gridData: GridData, slotToMove: Slot, toPos: Pos) {
-    // TODO: allow the pawn to promote to other pieces besides into queens.
-    const promotionPiece: Piece = "queen";
+function promotePawnIfNeeded(gridData: GridData, slotToMove: Slot, toPos: Pos, promotion?: PromotionPiece) {
+    const promotionPiece: PromotionPiece = promotion ?? "queen";
 
     if (slotToMove.piece === "pawn") {
         const reachedRank = toPos[0];

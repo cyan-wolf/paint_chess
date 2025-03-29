@@ -71,10 +71,21 @@ class Board {
             // call all the `onMove` event handlers with the 
             // moved performed by the player.
             for (const onMove of this.onMoveDelegates) {
-                onMove({
+                const promotionPiece = this.detectPawnPromotionMove(this.lastClickedCoord, chessCoord);
+
+                // Construct the move.
+                const move = {
                     from: this.lastClickedCoord,
                     to: chessCoord,
-                });
+                };
+
+                // Add pawn promotion data if necessary.
+                if (promotionPiece !== undefined) {
+                    move.promotion = promotionPiece;
+                }
+
+                // Send the move to the event handlers.
+                onMove(move);
 
                 // Reset the last clicked coord.
                 this.lastClickedCoord = null;
@@ -124,6 +135,28 @@ class Board {
             const pieceElem = slotElem.children[0];
             pieceElem.classList = "";
             pieceElem.innerHTML = "";
+        }
+    }
+
+    detectPawnPromotionMove(fromCoord, toCoord) {
+        const validPieces = new Set(["queen", "rook", "bishop", "knight"]);
+
+        const slotData = this.boardDesc[fromCoord];
+        if (slotData !== undefined && slotData.piece === "pawn") {
+            const toPos = chessCoordToRowCol(toCoord);
+            const reachedRank = toPos[0];
+            
+            const reachedLastRank = (this.ownRole === "p1") ?  
+                (reachedRank === 0) : (reachedRank === 7);
+
+            if (reachedLastRank) {
+                let piece;
+
+                while (!validPieces.has(piece?.trim())) {
+                    piece = prompt("Pawn promotion", "queen");
+                }
+                return piece;
+            }
         }
     }
 

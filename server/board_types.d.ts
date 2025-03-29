@@ -26,6 +26,12 @@ type Piece =
     | "queen"
     | "king";
 
+type PromotionPiece = 
+    | "knight"
+    | "bishop"
+    | "rook"
+    | "queen";
+
 /**
  * Represents a slot on the board.
  * `piece` is the name of the piece, 
@@ -81,6 +87,7 @@ type Move = {
     from: Coord, 
     to: Coord, 
     player: PlayerRole
+    promotion?: PromotionPiece,
 };
 
 type BoardRundown = {

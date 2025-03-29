@@ -80,6 +80,7 @@ type RawMove = {
     from?: string, 
     to?: string, 
     username?: string,
+    promotion?: string,
 };
 
 type Message = {

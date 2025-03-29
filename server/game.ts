@@ -177,16 +177,32 @@ export class Game {
         }
     }
 
+    checkPawnPromotionField(promotion: string | undefined): promotion is PromotionPiece | undefined {
+        if (promotion !== undefined) {
+            const validPieces: Set<PromotionPiece> = new Set(["queen", "rook", "bishop", "knight"]);
+
+            if (!validPieces.has(promotion as PromotionPiece)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Processes a move from the user.
     processMove(rawMove: RawMove): boolean {
         if (this.hasEnded) {
             return false;
         }
 
-        const { from, to, username } = rawMove;
+        const { from, to, username, promotion } = rawMove;
 
         // TODO: Add more validation.
         if (from === undefined || to === undefined || username === undefined ) {
+            return false;
+        }
+
+        // Check pawn promotion data.
+        if (!this.checkPawnPromotionField(promotion)) {
             return false;
         }
 
@@ -195,7 +211,7 @@ export class Game {
             return false;
         }
 
-        const move: Move = { from, to, player: role };
+        const move: Move = { from, to, player: role, promotion };
 
         const couldMove = this.board.processMove(move);
 
