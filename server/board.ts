@@ -391,7 +391,7 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol + 3];
 
-        gridData.castlingData[player].leftRookMoved = true;
+        //gridData.castlingData[player].leftRookMoved = true;
     }
     else if (rookCol === 7) {
         if (gridData.castlingData[player].rightRookMoved) {
@@ -401,7 +401,7 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol - 2];
 
-        gridData.castlingData[player].rightRookMoved = true;
+        //gridData.castlingData[player].rightRookMoved = true;
     }
     else {
         // Unreachable (?).
@@ -455,9 +455,11 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
     // Forcefully move the rook without checking the path.
     movePiece(gridData, rookStartPos, rookEndPos, actualRookPath);
 
-    // Teleport the king to the correct position.
-    gridData.grid[kingDestPos[0]][kingDestPos[1]] = kingSlot;
-    gridData.castlingData[player].kingHasMoved = true;
+    // Forcefully move the king to the correct position.
+    // The path is empty since there is no way to observe the king's 
+    // path in a normal game when castling.
+    movePiece(gridData, fromPos, kingDestPos, []);
+    //gridData.castlingData[player].kingHasMoved = true;
 
     // Delete the old slot's king.
     const emptySlot = newEmptySlot();
