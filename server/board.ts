@@ -35,6 +35,7 @@ export class Board {
         };
         this.turn = "p1";
 
+        // Reporting fields.
         this.checkStatus = null;
         this.lastChangedCoords = new Set();
         this.legalMovesRundown = undefined;
@@ -50,14 +51,19 @@ export class Board {
         }
 
         this.loadBoardDesc(genInitialChessBoardDesc());
-        //this.loadBoardDesc(genTestBoardDesc());
     }
 
+    /**
+     * Utility method for returning the board's actual grid.
+     */
     getGrid(): Grid {
         return this.gridData.grid;
     }
 
-    // Processes a move given by the game itself.
+    /**
+     * Processes a move made by a player. Returns `true` if the move 
+     * was able to be performed.
+     */
     processMove(move: Move): boolean {
         const newGridData = structuredClone(this.gridData);
 
@@ -118,7 +124,9 @@ export class Board {
         return true;
     }
 
-    // Clears the board's grid.
+    /**
+     * Clears the board's actual grid.
+     */
     clearGrid() {
         for (let r = 0; r < 8; r++) {
             for (let c = 0; c < 8; c++) {
@@ -127,7 +135,10 @@ export class Board {
         }
     }
 
-    // Turns the board's grid into a board description object.
+    /**
+     * Turns the board's grid into a board description object.
+     * The returned object maps chess coordinates to slot data.
+     */
     toBoardDesc(): BoardDescription {
         const boardDesc: BoardDescription = {};
 
@@ -155,7 +166,10 @@ export class Board {
         return boardDesc;
     }
 
-    // Loads a board description object into the board's grid.
+    /**
+     * Loads a board description object into the board's actual grid.
+     * Used for filling in the board's grid.
+     */
     loadBoardDesc(boardDesc: BoardDescription): void {
         this.clearGrid();
 
@@ -182,7 +196,9 @@ export class Board {
         }
     }
 
-    // Wires a board event listener to the board.
+    /**
+     * Wires a board event listener to the board.
+     */
     addBoardEventListener(onBoardEvent: BoardEventListener) {
         this.boardEventListeners.push(onBoardEvent);
     }
@@ -328,10 +344,18 @@ function getInBetweenPositions(fromPos: Pos, toPos: Pos): Pos[] {
     return inBetween;
 }
 
-// Moves a piece (without validation) and colors the piece's path.
-// The piece's path includes all the slots that the piece "traversed",
-// excluding the final position.
-// Updates the cached king position if one moved.
+/**
+ * Moves a piece (without validation) and colors the piece's path.
+ * The piece's path includes all the slots that the piece "traversed",
+ * excluding the final position.
+ * Updates the cached king position if one moved.
+ * Also updates any bookeeping used to determine if a player can still perform 
+ * castling.
+ * @param gridData The grid data to be updated.
+ * @param fromPos The position of the piece to move.
+ * @param toPos The piece's destination.
+ * @param piecePosPath The path that the piece traces out when moving.
+ */
 function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: Pos[]) {
     const grid = gridData.grid;
     const slotToMove = grid[fromPos[0]][fromPos[1]];
@@ -367,12 +391,22 @@ function movePiece(gridData: GridData, fromPos: Pos, toPos: Pos, piecePosPath: P
     }
 }
 
-function promotePawnIfNeeded(gridData: GridData, slotToMove: Slot, toPos: Pos, promotion?: PromotionPiece) {
+/**
+ * Should be called after moving a piece to `toPos`. If the moved piece isn't a pawn 
+ * and/or it hasn't reached its final rank, then this method does nothing. Otherwise, 
+ * it promotes the pawn to the piece given by `promotion`. The promotion piece must 
+ * be valid according to usual chess rules.
+ * @param gridData The grid data to update.
+ * @param slotToPromote The slot that (possibly) contains the pawn to promote.
+ * @param toPos The piece's destination position.
+ * @param promotion The piece that the piece should promote to if the conditions are valid.
+ */
+function promotePawnIfNeeded(gridData: GridData, slotToPromote: Slot, toPos: Pos, promotion?: PromotionPiece) {
     const promotionPiece: PromotionPiece = promotion ?? "queen";
 
-    if (slotToMove.piece === "pawn") {
+    if (slotToPromote.piece === "pawn") {
         const reachedRank = toPos[0];
-        const reachedLastRank = (slotToMove.player === "p1") ?  
+        const reachedLastRank = (slotToPromote.player === "p1") ?  
             (reachedRank === 0) : (reachedRank === 7);
 
         if (reachedLastRank) {
@@ -383,6 +417,9 @@ function promotePawnIfNeeded(gridData: GridData, slotToMove: Slot, toPos: Pos, p
     }
 }
 
+/**
+ * Inspects a move and determines whether the player is trying to perform castling.
+ */
 function detectCastlingAttempt(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
     const slotToMove = getSlot(grid, fromPos);
     const selectedSlot = getSlot(grid, toPos);
@@ -392,6 +429,13 @@ function detectCastlingAttempt(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
         slotToMove.player === selectedSlot.player;
 }
 
+/**
+ * Performes castling on `gridData`.
+ * @param gridData The grid data to update.
+ * @param fromPos The king's position.
+ * @param toPos The rook's position.
+ * @returns Whether the castling was successful.
+ */
 function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean {
     const kingSlot = getSlot(gridData.grid, fromPos);
     const player = kingSlot.player!;
@@ -487,7 +531,12 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
     return true;
 }
 
-// Does basic (preliminary) validation for pieces.
+/**
+ * Does basic (preliminary) validation for pieces. These validations
+ * checks the basic piece movement patterns (i.e. diagonal movement for 
+ * bishops, L shape movement for knights).
+ * @returns Whether the move passed the valdiations.
+ */
 function prelimVerifyMove(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
     const dr = Math.abs(toPos[0] - fromPos[0]);
     const dc = Math.abs(toPos[1] - fromPos[1]);
@@ -542,6 +591,15 @@ function isFriendlyCapture(fromPos: Pos, toPos: Pos, grid: Grid): boolean {
     return getSlot(grid, fromPos).player === getSlot(grid, toPos).player;
 }
 
+/**
+ * Determines whether the path traced out by the piece is valid.
+ * A path is valid if it does not override pieces (only pieces can capture 
+ * other pieces, their paths cannot) and if the path doesn't override 
+ * the other player's turf (again, only pieces can do this, not their path).
+ * @param grid 
+ * @param path 
+ * @returns 
+ */
 function pathIsValid(grid: Grid, path: Pos[]): boolean {
     const slotToMove = getSlot(grid, path[0]);
 
@@ -598,6 +656,9 @@ function longRangeFillInAttackingCoords(
     }
 }
 
+/**
+ * Generate the set of coordinates that the piece at `slotPos` attacks.
+ */
 function getAttackingCoords(grid: Grid, slotPos: Pos): Set<Coord> {    
     const slot = getSlot(grid, slotPos);
     const attacking = new Set<Coord>();
@@ -704,6 +765,10 @@ function getAttackingCoords(grid: Grid, slotPos: Pos): Set<Coord> {
     return attacking;
 }
 
+/**
+ * Generate an object that maps each piece's coordinate to the 
+ * coordinates that they attack.
+ */
 function toBoardRundown(grid: Grid): BoardRundown {
     const rundown: BoardRundown = {
         p1: {},
