@@ -251,6 +251,11 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
     }
     // Castling.
     else {
+        // King cannot castle while in check.
+        if (inCheck(gridData, turn)) {
+            return false;
+        }
+
         const couldPerformCastling = performCastling(gridData, fromPos, toPos);
         if (!couldPerformCastling) {
             return false;
@@ -428,8 +433,10 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
     }
 
     // Verify if the king has a safe path to the castling destination 
-    // (i.e. isn't in check along the way).
-    for (const pos of kingPath) {
+    // (i.e. isn't in check along the way). Skip the first element of the 
+    // path since it's the king's current position (a piece moving to its 
+    // current position always fails).
+    for (const pos of kingPath.slice(1)) {
         const virtualGridData = structuredClone(gridData);
         const virtualMove: Move = {
             from: rowColToChessCoord(fromPos),
@@ -438,18 +445,10 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         };
         const couldMove = performVirtualMove(virtualMove, kingSlot.player!, virtualGridData);
 
-        // console.log(pos);
-        // console.log(couldMove);
-
-        // TODO: this isn't working because the kingPath
-        // includes the king's current position, 
-        // which is automatically an illegal move since 
-        // the king can't move to it's current position.
-
-        // // Used to detect if the king was in check.
-        // if (!couldMove) {
-        //     return false;
-        // }
+        // Used to detect if the king was in check.
+        if (!couldMove) {
+            return false;
+        }
     }
 
     // Stop the king from going through pieces.
