@@ -33,6 +33,7 @@ import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 import "npm:hbs@4.2.0";
 
 import assert from "node:assert";
+import { SocketManager } from "./server/socket_manager.ts";
 
 const app = express();
 const server = http.createServer(app);
@@ -257,8 +258,10 @@ app.get('/testing', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/testing.html"));
 });
 
-const gameManager = new GameManager(io);
-gameManager.connectSockets();
+const gameManager = new GameManager();
+
+const socketManager = new SocketManager(io, gameManager);
+socketManager.wireSockets();
 
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;

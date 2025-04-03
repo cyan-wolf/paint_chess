@@ -1,4 +1,3 @@
-import { Server } from "npm:socket.io@4.8.1";
 import { Game } from "./game.ts";
 
 import * as data_access from "./data_access.ts";
@@ -33,6 +32,7 @@ type PlayerInfo = {
     joined: boolean,
     active: boolean,
     queueing: boolean,
+    eventHandler: GameManagerEventHandler,
 };
 
 type PlayerRegistry = {
@@ -43,19 +43,26 @@ type ActiveGames = {
     [gameId: ID]: Game
 };
 
+type GameManagerEvent = 
+    | { kind: "game-start", payload: GameViewForClient }
+    | { kind: "move-performed-response", payload: GameViewForClient }
+    | { kind: "play-sound", payload: { sound: "move" | "game-end" } }
+    | { kind: "current-chat-history", payload: { history: Message[] } }
+    | { kind: "game-ended", payload: { result: GameEndResult } }
+    | { kind: "found-game", payload: { gameId: ID } }
+    | { kind: "current-game-queue", payload: QueuedGameClientView[] };
+
+type GameManagerEventHandler = (event: GameManagerEvent) => void;
+
 export class GameManager {
     queuedGamesDb: GameQueue;
     activeGamesDb: ActiveGames;
-    playerRegistry: PlayerRegistry
+    playerRegistry: PlayerRegistry;
 
-    readonly io: Server
-
-    constructor(io: Server) {
+    constructor() {
         this.queuedGamesDb = {};
         this.activeGamesDb = {};
         this.playerRegistry = {};
-
-        this.io = io;
     }
 
     // Placeholder ID generator.
@@ -115,12 +122,13 @@ export class GameManager {
     }
 
     // Saves a player to the registry if it wasn't in it already.
-    saveUsernameToRegistry(username: string) {
+    saveUsernameToRegistry(username: string, eventHandler: GameManagerEventHandler) {
         if (!this.usernameInRegistry(username)) {
             this.playerRegistry[username] = {
                 joined: false,
                 active: false,
                 queueing: false,
+                eventHandler,
             };
         }
     }
@@ -278,6 +286,183 @@ export class GameManager {
         return clientViews;
     }
 
+    // Sends the given event to all players in the registry.
+    emitGameManagerEventToAll(event: GameManagerEvent) {
+        for (const username of Object.keys(this.playerRegistry)) {
+            this.emitEvent(username, event);
+        }
+    }
+
+    // Sends the given event to the specified player.
+    emitEvent(toUsername: string, event: GameManagerEvent) {
+        if (this.usernameInRegistry(toUsername)) {
+            this.playerRegistry[toUsername].eventHandler(event);
+        }
+    }
+
+    // Makes the user queue a new game using the given settings.
+    userWantsQueueNewGame(username: string, gameSettings: GameSettings) {
+        // Game settings must be valid.
+        if (!this.validateGameSettings(gameSettings)) {
+            return;
+        }
+        // Prevent a player that's already queuing from queuing more games.
+        if (this.usernameIsQueueingGame(username)) {
+            return;
+        }
+        const gameId = this.createQueuedGame(gameSettings);
+
+        // Auto-join the user to the game.
+        this.tryJoinPlayerToQueuedGame(username, gameId);
+
+        // Update the game queue for all users.
+        // TODO: ...
+        //this.emitGameManagerEventToAll({ kind: "current-game-queue", payload: await this.genClientGameQueueSlice() });
+    }
+
+    userWantsToStartGame(username: string) {
+        if (!this.usernameIsActive(username)) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = this.playerRegistry[username].gameId!;
+        
+        // Re-join the user to the socket game room, as 
+        // the connection was reset when the page reloaded 
+        // when getting to "/game/:id".
+        //socket.join(`user-${username}`);
+
+        const game = this.activeGamesDb[gameId];
+
+        // Player is joining for the first time.
+        if (!this.playerRegistry[username].joined) {
+            // Increment the number of joined players.
+            game.joinPlayer();
+
+            this.playerRegistry[username].joined = true;
+        } 
+        // Player is rejoining the game.
+        else if (game.getUsers().includes(username)) {
+            const gameData = game.asClientView(username);
+            this.emitEvent(username, { kind: "game-start", payload: gameData });
+
+            // Exit event handler here to avoid the 
+            // other player from receiving the "game-start" event as well.
+            return;
+        }
+
+        // Officially start the game.
+        if (game.getJoinedPlayerAmt() == 2 && !game.hasStarted()) {
+            // Sets up various parts of the game.
+            game.start();
+
+            for (const usernameInGame of game.getUsers()) {
+                const gameData = game.asClientView(usernameInGame);
+                this.emitEvent(usernameInGame, { kind: "game-start", payload: gameData });
+            }
+        }
+    }
+
+    userWantsToPerformMove(username: string, move: RawMove) {
+        if (!this.usernameIsActive(username)) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = this.playerRegistry[username].gameId!;
+        const game = this.activeGamesDb[gameId];
+
+        if (typeof move !== "object") {
+            return; // do not accept strange input
+        }
+        move.username = username;
+
+        const couldMove = game.processMove(move);
+
+        if (!couldMove) {
+            return;
+        }
+
+        // Send the result of the move to the users in the game.
+        for (const usernameInGame of game.getUsers()) {
+            const gameData = game.asClientView(usernameInGame);
+
+            this.emitEvent(usernameInGame, {
+                kind: "move-performed-response",
+                payload: gameData,
+            });
+
+            // Tell users to play a movement sound.
+            this.emitEvent(usernameInGame, {
+                kind: "play-sound",
+                payload: { sound: "move" },
+            });
+        }
+    }
+
+    userWantsToPublishMessage(username: string, content: unknown) {
+        if (!this.usernameIsActive(username)) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+
+        if (typeof content !== 'string') {
+            return; // do not accept strange input
+        }
+
+        if (content.trim().length === 0) {
+            return; // only accept valid messages
+        }
+
+        const gameId = this.playerRegistry[username].gameId!;
+        const game = this.activeGamesDb[gameId];
+
+        game.publishMessage({
+            by: username,
+            content,
+        });
+
+        // Send the chat to the users in the game.
+        for (const usernameInGame of game.getUsers()) {
+            this.emitEvent(usernameInGame, {
+                kind: "current-chat-history",
+                payload: {
+                    history: game.getMessageHistory(9),
+                }
+            });
+        }
+    }
+
+    userWantsChatHistory(username: string) {
+        if (!this.usernameIsActive(username)) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = this.playerRegistry[username].gameId!;
+        const game = this.activeGamesDb[gameId];
+
+        this.emitEvent(username, {
+            kind: "current-chat-history",
+            payload: {
+                history: game.getMessageHistory(9),
+            }
+        });
+    }
+
+    userWantsToResign(username: string) {
+        if (!this.usernameIsActive(username)) {
+            // Ignore socket if the player is not in a game.
+            return; 
+        }
+        const gameId = this.playerRegistry[username].gameId!;
+        const game = this.activeGamesDb[gameId];
+
+        game.finish({
+            // The other player wins.
+            winner: Game.togglePlayerRole(game.userToRole(username)),
+            method: "resign",
+        });
+    }
+
     // Turns a queued game into an active game.
     createGame(gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
@@ -316,13 +501,22 @@ export class GameManager {
                 const gameData = game.asClientView(usernameInGame);
 
                 // Send the final state of the game to all players before ending the game.
-                this.io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
+                this.emitEvent(usernameInGame, {
+                    kind: "move-performed-response",
+                    payload: gameData,
+                });
 
-                // Ends the game on the client.
-                this.io.to(`user-${usernameInGame}`).emit("game-ended", { result });
+                // Ends the game for the user..
+                this.emitEvent(usernameInGame, {
+                    kind: "game-ended",
+                    payload: { result },
+                });
 
-                // Tell the clients to play a "game-end" sound.
-                this.io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "game-end" });
+                // Tell the user to play a "game-end" sound.
+                this.emitEvent(usernameInGame, {
+                    kind: "play-sound",
+                    payload: { sound: "game-end" },
+                });
 
                 // TODO: add a record of the results of the game to the database
                 // ...
@@ -341,189 +535,11 @@ export class GameManager {
 
         // Redirects the user to "/game/:id" on the client.
         for (const usernameInGame of game.getUsers()) {
-            this.io.to(`user-${usernameInGame}`).emit("found-game", { gameId });
+            this.emitEvent(usernameInGame, {
+                kind: "found-game",
+                payload: { gameId },
+            });
         }
-    }
-
-    // Manages socket connections.
-    connectSockets() {
-        const io = this.io;
-        const activeGamesDb = this.activeGamesDb;
-
-        // Setup sockets.
-        io.on("connection", (socket) => {
-            const session = socket.request.session;
-
-            if (!session.user) {
-                return; // ignore events from this socket
-            }
-
-            const username = session.user.username;
-            // For sending events using only the username.
-            socket.join(`user-${username}`);
-
-            this.saveUsernameToRegistry(username);
-
-            // When the user queues a new game.
-            socket.on("queue-game", async ({ gameSettings }) => {
-                // Game settings must be valid.
-                if (!this.validateGameSettings(gameSettings)) {
-                    return;
-                }
-                // Prevent a player that's already queuing from queuing more games.
-                if (this.usernameIsQueueingGame(username)) {
-                    return;
-                }
-                const gameId = this.createQueuedGame(gameSettings);
-
-                // Auto-join the user to the game.
-                this.tryJoinPlayerToQueuedGame(username, gameId);
-
-                io.emit("current-game-queue", await this.genClientGameQueueSlice());
-            });
-
-            socket.on("request-current-game-queue", async () => {
-                io.to(socket.id).emit("current-game-queue", await this.genClientGameQueueSlice());
-            });
-
-            socket.on("join-game-request", async ({ gameId }) => {
-                this.tryJoinPlayerToQueuedGame(username, gameId);
-                
-                io.emit("current-game-queue", await this.genClientGameQueueSlice());
-            });
-
-            socket.on("ready-to-start-game", () => {
-                if (!this.usernameIsActive(username)) {
-                    // Ignore socket if the player is not in a game.
-                    return; 
-                }
-                const gameId = this.playerRegistry[username].gameId!;
-                
-                // Re-join the user to the socket game room, as 
-                // the connection was reset when the page reloaded 
-                // when getting to "/game/:id".
-                socket.join(`user-${username}`);
-
-                const game = activeGamesDb[gameId];
-
-                // Player is joining for the first time.
-                if (!this.playerRegistry[username].joined) {
-                    // Increment the number of joined players.
-                    game.joinPlayer();
-
-                    this.playerRegistry[username].joined = true;
-                } 
-                // Player is rejoining the game.
-                else if (game.getUsers().includes(username)) {
-                    const gameData = game.asClientView(username);
-                    io.to(`user-${username}`).emit("game-start", gameData);
-
-                    // Exit event handler here to avoid the 
-                    // other player from receiving the "game-start" event as well.
-                    return;
-                }
-
-                // Officially start the game.
-                if (game.getJoinedPlayerAmt() == 2 && !game.hasStarted()) {
-                    // Sets up various parts of the game.
-                    game.start();
-
-                    for (const usernameInGame of game.getUsers()) {
-                        const gameData = game.asClientView(usernameInGame);
-                        io.to(`user-${usernameInGame}`).emit("game-start", gameData);
-                    }
-                }
-            });
-
-            socket.on("perform-move", (move) => {
-                if (!this.usernameIsActive(username)) {
-                    // Ignore socket if the player is not in a game.
-                    return; 
-                }
-                const gameId = this.playerRegistry[username].gameId!;
-                const game = activeGamesDb[gameId];
-
-                if (typeof move !== "object") {
-                    return; // do not accept strange input
-                }
-                move.username = username;
-
-                const couldMove = game.processMove(move);
-
-                if (!couldMove) {
-                    return;
-                }
-
-                // Send the result of the move to the users in the game.
-                for (const usernameInGame of game.getUsers()) {
-                    const gameData = game.asClientView(usernameInGame);
-                    io.to(`user-${usernameInGame}`).emit("move-performed-response", gameData);
-
-                    // Tell the clients to play a movement sound.
-                    io.to(`user-${usernameInGame}`).emit("play-sound", { sound: "move" });
-                }
-            });
-
-            socket.on("chat-publish", ({ content }) => {
-                if (!this.usernameIsActive(username)) {
-                    // Ignore socket if the player is not in a game.
-                    return; 
-                }
-
-                if (typeof content !== 'string') {
-                    return; // do not accept strange input
-                }
-
-                if (content.trim().length === 0) {
-                    return; // only accept valid messages
-                }
-
-                const gameId = this.playerRegistry[username].gameId!;
-                const game = activeGamesDb[gameId];
-
-                game.publishMessage({
-                    by: username,
-                    content,
-                });
-
-                // Send the chat to the users in the game.
-                for (const usernameInGame of game.getUsers()) {
-                    io.to(`user-${usernameInGame}`)
-                        .emit("current-chat-history", {
-                            history: game.getMessageHistory(9)
-                        });
-                }
-            });
-
-            socket.on("request-current-chat-history", () => {
-                if (!this.usernameIsActive(username)) {
-                    // Ignore socket if the player is not in a game.
-                    return; 
-                }
-                const gameId = this.playerRegistry[username].gameId!;
-                const game = activeGamesDb[gameId];
-
-                io.to(socket.id)
-                    .emit("current-chat-history", {
-                        history: game.getMessageHistory(9)
-                    });
-            });
-
-            socket.on("resign", () => {
-                if (!this.usernameIsActive(username)) {
-                    // Ignore socket if the player is not in a game.
-                    return; 
-                }
-                const gameId = this.playerRegistry[username].gameId!;
-                const game = activeGamesDb[gameId];
-
-                game.finish({
-                    // The other player wins.
-                    winner: Game.togglePlayerRole(game.userToRole(username)),
-                    method: "resign",
-                });
-            });
-        });
     }
 }
 
