@@ -8,30 +8,39 @@ type PublicUserData = {
     isGuest: boolean,
 };
 
-type GuestUserInfo = {
+type TemporaryUserInfo = {
     displayname: string,
     elo: number,
 };
 
 type GuestUserDb = {
-    [username: string]: GuestUserInfo,
+    [username: string]: TemporaryUserInfo,
 };
-const guestUsersLocalDb: GuestUserDb = {};
+const temporaryUsersLocalDb: GuestUserDb = {};
 
-function guestUsernameAlreadyGenerated(generatedUsername: string): boolean {
-    return Object.hasOwn(guestUsersLocalDb, generatedUsername);
+function tempUsernameAlreadyGenerated(generatedUsername: string): boolean {
+    return Object.hasOwn(temporaryUsersLocalDb, generatedUsername);
 }
 
-function addGuestUser(generatedUsername: string, guestInfo: GuestUserInfo) {
-    guestUsersLocalDb[generatedUsername] = guestInfo;
+// Placeholder ID generator.
+function genId(): string {
+    return Math.random().toString().substring(2);
 }
 
-function usernameIsGuest(username: string): boolean {
-    return username.startsWith("@guest-") && Object.hasOwn(guestUsersLocalDb, username);
+function generateTemporaryUsername(prefix: "guest" | "ai") {
+    return `@${prefix}-${genId()}`;
+}
+
+function addTemporaryUser(generatedUsername: string, temporaryInfo: TemporaryUserInfo) {
+    temporaryUsersLocalDb[generatedUsername] = temporaryInfo;
+}
+
+function usernameIsTemporary(username: string): boolean {
+    return username.startsWith("@") && Object.hasOwn(temporaryUsersLocalDb, username);
 }
 
 // Fetches (public) data from the user with the given username.
-// The user could be from an account or a guest.
+// The user could be from an account or a temporary (i.e. guest) profile.
 async function fetchUserData(username: string, roundElo?: boolean): Promise<PublicUserData | null> {
     if (roundElo === undefined) {
         // Round the ELO by default.
@@ -39,12 +48,12 @@ async function fetchUserData(username: string, roundElo?: boolean): Promise<Publ
     }
     
     // The username belongs to a guest account.
-    if (usernameIsGuest(username)) {
-        const elo = guestUsersLocalDb[username].elo;
+    if (usernameIsTemporary(username)) {
+        const elo = temporaryUsersLocalDb[username].elo;
 
         const userData = {
             username,
-            displayname: guestUsersLocalDb[username].displayname,
+            displayname: temporaryUsersLocalDb[username].displayname,
             elo: (roundElo) ? Math.floor(elo) : elo,
             isGuest: true,
         };
@@ -72,8 +81,8 @@ async function fetchUserData(username: string, roundElo?: boolean): Promise<Publ
 }
 
 async function setUserELO(username: string, newElo: number) {
-    if (usernameIsGuest(username)) {
-        guestUsersLocalDb[username].elo = newElo;
+    if (usernameIsTemporary(username)) {
+        temporaryUsersLocalDb[username].elo = newElo;
     }
     else {
         const usersCollection = db.collection<UserSchema>("users");
@@ -87,8 +96,9 @@ async function setUserELO(username: string, newElo: number) {
 }
 
 export {
-    guestUsernameAlreadyGenerated,
-    addGuestUser,
+    generateTemporaryUsername,
+    tempUsernameAlreadyGenerated,
+    addTemporaryUser,
     fetchUserData,
     setUserELO,
 };

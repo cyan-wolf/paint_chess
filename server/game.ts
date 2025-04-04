@@ -158,6 +158,7 @@ export class Game {
             checkStatus: structuredClone(this.board.checkStatus),
             lastChangedCoords: Array.from(this.board.lastChangedCoords),
             legalMovesRundown: structuredClone(this.board.legalMovesRundown),
+            turn: this.board.turn,
             ownRole,
         };
         return data;

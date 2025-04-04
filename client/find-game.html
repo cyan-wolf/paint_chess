@@ -23,6 +23,10 @@
                     min="1"
                     max="90"
                     required>
+                <br><br>
+
+                <input type="checkbox" name="input-vs-ai" id="input-vs-ai">
+                <label for="input-vs-ai">Play versus AI</label>
                 <br>
                 
                 <button id="queue-btn">Queue Game</button>
@@ -46,9 +50,11 @@
     // This lets the server know that a game needs to be queued.
     document.getElementById("queue-btn").addEventListener("click", (e) => {
         const secsPerPlayer = parseInt(document.getElementById("input-player-mins").value) * 60;
+        const vsAI = document.getElementById("input-vs-ai").checked;
 
         const gameSettings = {
             secsPerPlayer,
+            vsAI,
         };
 
         socket.emit("queue-game", { gameSettings });

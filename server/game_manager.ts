@@ -1,15 +1,13 @@
 import { Game } from "./game.ts";
 
 import * as data_access from "./data_access.ts";
+import { ChessAIUser } from "./chess_ai.ts";
 
 type ID = string;
 
-type RawGameSettings = {
-    secsPerPlayer?: number,
-};
-
 type GameSettings = {
     secsPerPlayer: number,
+    vsAI: boolean,
 };
 
 type GameQueue = {
@@ -71,14 +69,20 @@ export class GameManager {
     }
 
     // Make sure that the game settings are valid.
-    validateGameSettings(gameSettings?: RawGameSettings): gameSettings is GameSettings {
-        if (gameSettings === undefined) {
+    validateGameSettings(gameSettings: unknown): gameSettings is GameSettings {
+        if (typeof(gameSettings) !== 'object' || gameSettings === null) {
             return false;
         }
-        if (gameSettings.secsPerPlayer === undefined) {
+        if (! ('secsPerPlayer' in gameSettings)) {
+            return false;
+        }
+        if (! ('vsAI' in gameSettings)) {
             return false;
         }
         if (typeof(gameSettings.secsPerPlayer) !== 'number') {
+            return false;
+        }
+        if (typeof(gameSettings.vsAI) !== 'boolean') {
             return false;
         }
         // Only accept times between 1 and 90 minutes.
@@ -142,6 +146,18 @@ export class GameManager {
         return this.playerRegistry[username];
     }
 
+    createAiUser(generatedUsername: string, gameIdToJoin: ID): string {
+        data_access.addTemporaryUser(generatedUsername, {
+            displayname: "Paint Chess AI",
+            elo: 400,
+        });
+        
+        const ai = new ChessAIUser(generatedUsername, gameIdToJoin, this);
+        ai.register();
+
+        return generatedUsername;
+    }
+
     // Creates a new queued game.
     createQueuedGame(gameSettings: GameSettings): ID {
         const gameId = this.genId();
@@ -150,6 +166,12 @@ export class GameManager {
             waitingPlayers: [],
             gameSettings,
         };
+
+        if (gameSettings.vsAI) {
+            const generatedUsername = data_access.generateTemporaryUsername("ai");
+            //waitingPlayers.push(generatedUsername);
+            this.createAiUser(generatedUsername, gameId);
+        }
         return gameId;
     }
 

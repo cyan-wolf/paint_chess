@@ -5,12 +5,9 @@ import { UserSchema } from "./db_conn_types.d.ts";
 // For hashing passwords.
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
-import { guestUsernameAlreadyGenerated, addGuestUser } from "./data_access.ts";
+import * as data_access from "./data_access.ts";
 
-// Placeholder ID generator.
-function genId(): string {
-    return Math.random().toString().substring(2);
-}
+
 
 // Validates the given login credentials.
 async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {
@@ -57,10 +54,10 @@ export async function tryLoginUser(reqBody?: RawLoginRequest): Promise<User | nu
         const displayname = reqBody.displayname.trim();
 
         if (displayname.length > 0 && displayname.length <= 20) {
-            const generatedUsername = `@guest-${genId()}`;
+            const generatedUsername = data_access.generateTemporaryUsername("guest");
 
-            if (!guestUsernameAlreadyGenerated(generatedUsername)) {
-                addGuestUser(generatedUsername, {
+            if (!data_access.tempUsernameAlreadyGenerated(generatedUsername)) {
+                data_access.addTemporaryUser(generatedUsername, {
                     displayname: reqBody.displayname,
                     elo: 400,
                 });
