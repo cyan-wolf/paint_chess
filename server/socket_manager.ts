@@ -27,7 +27,7 @@ export class SocketManager {
 
             this.gameManager.saveUsernameToRegistry(username, (event) => {
                 // Sends the events back to the client.
-                socket.to(`user-${username}`).emit(event.kind, event.payload);
+                this.io.to(`user-${username}`).emit(event.kind, event.payload);
             });
             
             // When the client wants to queue a new game.
