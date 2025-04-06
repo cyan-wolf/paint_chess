@@ -176,7 +176,7 @@ export class GameManager {
     }
 
     // Joins a player to the given game.
-    tryJoinPlayerToQueuedGame(username: string, gameId: ID) {
+    userWantsToJoinQueuedGame(username: string, gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
             return; // ignore attempt if game ID is invalid
         }
@@ -335,7 +335,7 @@ export class GameManager {
         const gameId = this.createQueuedGame(gameSettings);
 
         // Auto-join the user to the game.
-        this.tryJoinPlayerToQueuedGame(username, gameId);
+        this.userWantsToJoinQueuedGame(username, gameId);
 
         // Update the game queue for all users.
         // TODO: ...
@@ -501,10 +501,17 @@ export class GameManager {
             this.playerRegistry[queuedUsername].active = true;
         }
 
+        // Randomly choose whether [p1Idx, p2Idx] is 
+        // [0, 1] or [1, 0]. This makes it so that 
+        // the first player in the `waitingPlayers` array
+        // isn't always automatically Player 1 in the game.
+        const p1Idx = Math.floor(Math.random() * 2);
+        const p2Idx = (p1Idx + 1) % 2;
+
         const game = new Game({
             gameId,
-            p1: queuedGame.waitingPlayers[0], 
-            p2: queuedGame.waitingPlayers[1], 
+            p1: queuedGame.waitingPlayers[p1Idx], 
+            p2: queuedGame.waitingPlayers[p2Idx], 
             joinedPlayers: 0,
             secsPerPlayer: queuedGame.gameSettings.secsPerPlayer,
             hasStarted: false,

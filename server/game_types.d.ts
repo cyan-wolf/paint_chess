@@ -70,7 +70,7 @@ type GameViewForClient = {
     turn: PlayerRole,
     checkStatus: CheckStatus,
     lastChangedCoords: Coord[],
-    legalMovesRundown?: LegalMovesRundown,
+    legalMovesRundown: LegalMovesRundown,
 };
 
 /**

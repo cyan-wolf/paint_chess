@@ -46,7 +46,7 @@ export class SocketManager {
 
             // When the client wants to join a game with the given ID.
             socket.on("join-game-request", async ({ gameId }) => {
-                this.gameManager.tryJoinPlayerToQueuedGame(username, gameId);
+                this.gameManager.userWantsToJoinQueuedGame(username, gameId);
                 
                 // It might not be necessary to call this 
                 // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

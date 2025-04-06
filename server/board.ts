@@ -8,7 +8,7 @@ export class Board {
     // Used for reporting purposes, not for actual logic.
     checkStatus: CheckStatus
     lastChangedCoords: Set<Coord>
-    legalMovesRundown?: LegalMovesRundown
+    legalMovesRundown: LegalMovesRundown
 
     boardEventListeners: BoardEventListener[]
 
@@ -35,11 +35,6 @@ export class Board {
         };
         this.turn = "p1";
 
-        // Reporting fields.
-        this.checkStatus = null;
-        this.lastChangedCoords = new Set();
-        this.legalMovesRundown = undefined;
-
         this.boardEventListeners = [];
 
         for (let r = 0; r < 8; r++) {
@@ -51,6 +46,11 @@ export class Board {
         }
 
         this.loadBoardDesc(genInitialChessBoardDesc());
+
+        // Reporting fields.
+        this.checkStatus = null;
+        this.lastChangedCoords = new Set();
+        this.legalMovesRundown = genLegalMovesRundown(this.gridData);
     }
 
     /**
