@@ -1,13 +1,11 @@
 // For database access.
 import db from "./db_conn.ts";
-import { UserSchema } from "./db_conn_types.d.ts";
+import { UserSchema } from "./types/db_conn_types.d.ts";
 
 // For hashing passwords.
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 import * as data_access from "./data_access.ts";
-
-
 
 // Validates the given login credentials.
 async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {

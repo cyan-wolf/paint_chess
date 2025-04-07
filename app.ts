@@ -19,7 +19,7 @@ import { GameManager } from "./server/game_manager.ts"
 
 // For database access.
 import db from "./server/db_conn.ts";
-import { UserSchema } from "./server/db_conn_types.d.ts";
+import { UserSchema } from "./server/types/db_conn_types.d.ts";
 
 // For login management.
 import * as login from "./server/login_management.ts";
@@ -242,7 +242,7 @@ app.get('/profile/:username', async (req, res) => {
     }
 
     // TODO: Allow users (with accounts) to customize this.
-    const description = (userInfo.isGuest) ? "This is a guest account." : "This is a user account.";
+    const description = (userInfo.isTemp) ? "This is a guest account." : "This is a user account.";
 
     // TODO: Add more data to this, like ELO history.
     const profileInfo = { 

@@ -1,22 +1,7 @@
 import db from "./db_conn.ts";
-import { UserSchema } from "./db_conn_types.d.ts";
+import { TemporaryUserDb, PublicUserData, TemporaryUserInfo, UserSchema } from "./types/db_conn_types.d.ts";
 
-type PublicUserData = {
-    username: string,
-    displayname: string,
-    elo: number,
-    isGuest: boolean,
-};
-
-type TemporaryUserInfo = {
-    displayname: string,
-    elo: number,
-};
-
-type GuestUserDb = {
-    [username: string]: TemporaryUserInfo,
-};
-const temporaryUsersLocalDb: GuestUserDb = {};
+const temporaryUsersLocalDb: TemporaryUserDb = {};
 
 function tempUsernameAlreadyGenerated(generatedUsername: string): boolean {
     return Object.hasOwn(temporaryUsersLocalDb, generatedUsername);
@@ -55,7 +40,7 @@ async function fetchUserData(username: string, roundElo?: boolean): Promise<Publ
             username,
             displayname: temporaryUsersLocalDb[username].displayname,
             elo: (roundElo) ? Math.floor(elo) : elo,
-            isGuest: true,
+            isTemp: true,
         };
         return userData;
     }
@@ -71,7 +56,7 @@ async function fetchUserData(username: string, roundElo?: boolean): Promise<Publ
             username: user.username,
             displayname: user.displayname,
             elo: (roundElo) ? Math.floor(elo) : elo,
-            isGuest: false,
+            isTemp: false,
         };
         return userData;
     }
