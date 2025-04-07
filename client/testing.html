@@ -31,15 +31,18 @@
                     bgLight: "#9ca4ff",
                     bgDark: "#1f1f61",
                 },
+                boardDesc: genInitialChessBoardDesc(),
             },
         });
 
-        // TODO: The board descriptions are supposed to come from the server.
-        board.update(genInitialChessBoardDesc());
+        // The board descriptions are supposed to come from the server.
+        board.update({
+            boardDesc: genInitialChessBoardDesc(),
+            lastChangedCoords: new Set(),
+            checkStatus: null,
+        });
         loadPieces();
-
-        // TODO: Use sockets to let the server know that this coordinate 
-        // was clicked.
+        
         board.addOnMoveEventHandler((move) => {
             console.log(move);
         });
