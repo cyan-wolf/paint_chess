@@ -1,4 +1,5 @@
 import { GameManager } from "./game_manager.ts";
+import { GameViewForClient } from "./types/game_types.d.ts";
 
 export class ChessAIUser {
     username: string

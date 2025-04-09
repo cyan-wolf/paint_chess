@@ -1,3 +1,4 @@
+import { PublicUserData } from "./db_conn_types.d.ts";
 
 /**
  * Represents general information that a running game should have,
@@ -7,10 +8,15 @@
 type MetaGameInfo = {
     gameId: string,
     joinedPlayers: number,
-    p1: string,
-    p2: string,
     secsPerPlayer: number,
     hasStarted: boolean,
+    
+    p1: PublicUserData,
+    p2: PublicUserData,
+};
+
+type UserDataRundown = {
+    [username: string]: PublicUserData,
 };
 
 /**
@@ -65,6 +71,9 @@ type GameViewForClient = {
             secsLeft: number,
             isTicking: boolean,
         }
+    },
+    userDataRundown: {
+        [username: string]: PublicUserData,
     },
     ownRole: PlayerRole,
     turn: PlayerRole,

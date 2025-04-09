@@ -1,4 +1,6 @@
 import { Board } from "./board.ts";
+import { ID } from "./types/game_manager_types.d.ts";
+import { ColorConfig, GameEndDelegate, GameEndResult, GameViewForClient, Message, MetaGameInfo, MiscGameEventDelegate, RawMove, TimeInfo, UserDataRundown } from "./types/game_types.d.ts";
 
 export class Game {
     meta: MetaGameInfo
@@ -62,35 +64,39 @@ export class Game {
                 case "checkmate":
                     this.finish({
                         method: "checkmate",
-                        winner: boardEvent.by
+                        winner: boardEvent.by,
                     });
                     break;
             }
         });
     }
 
-    id() {
+    id(): ID {
         return this.meta.gameId;
     }
 
-    joinPlayer() {
+    joinPlayer(): void {
         this.meta.joinedPlayers++;
     }
 
-    getJoinedPlayerAmt() {
+    getJoinedPlayerAmt(): number {
         return this.meta.joinedPlayers;
     }
 
-    hasUser(username: string) {
-        return username === this.meta.p1 || username === this.meta.p2;
+    hasUser(username: string): boolean {
+        return username === this.meta.p1.username || 
+            username === this.meta.p2.username;
     }
 
-    getUsers() {
-        return [this.meta.p1, this.meta.p2];
+    /**
+     * Returns the usernames of the users in the game.
+     */
+    getUsernames(): string[] {
+        return [this.meta.p1.username, this.meta.p2.username];
     }
 
-    roleToUser(role: PlayerRole): string {
-        const users = this.getUsers();
+    roleToUsername(role: PlayerRole): string {
+        const users = this.getUsernames();
 
         if (role === "p1") {
             return users[0];
@@ -99,10 +105,10 @@ export class Game {
         }
     }
 
-    userToRole(username: string): PlayerRole {
-        if (username === this.meta.p1) {
+    usernameToRole(username: string): PlayerRole {
+        if (username === this.meta.p1.username) {
             return "p1";
-        } else if (username === this.meta.p2) {
+        } else if (username === this.meta.p2.username) {
             return "p2";
         } else {
             throw Error("unknown user");
@@ -118,7 +124,7 @@ export class Game {
     }
 
     asClientView(username: string): GameViewForClient {
-        const ownRole = this.userToRole(username);
+        const ownRole = this.usernameToRole(username);
         const opponentRole = Game.togglePlayerRole(ownRole);
         const isFlipped = ownRole !== "p1";
 
@@ -133,19 +139,23 @@ export class Game {
             },
         };
 
+        const userDataRundown: UserDataRundown = {};
+        userDataRundown[this.roleToUsername("p1")] = this.meta.p1;
+        userDataRundown[this.roleToUsername("p2")] = this.meta.p2;
+
         const data = {
             gameInfo: {
                 gameId: this.meta.gameId,
                 p1: {
-                    username: this.roleToUser("p1"),
+                    username: this.roleToUsername("p1"),
                     color: this.colorConfig["p1"].piece,
                 },
                 p2: {
-                    username: this.roleToUser("p2"),
+                    username: this.roleToUsername("p2"),
                     color: this.colorConfig["p2"].piece,
                 },
                 turn: {
-                    username: this.roleToUser(this.board.turn),
+                    username: this.roleToUsername(this.board.turn),
                     color: this.colorConfig[this.board.turn].piece,
                 },
             },
@@ -155,6 +165,7 @@ export class Game {
             },
             boardDesc: this.board.toBoardDesc(),
             timeDesc,
+            userDataRundown,
             checkStatus: structuredClone(this.board.checkStatus),
             lastChangedCoords: Array.from(this.board.lastChangedCoords),
             legalMovesRundown: structuredClone(this.board.legalMovesRundown),
@@ -167,7 +178,7 @@ export class Game {
     // Determines whether the given username is 
     // player 1 or player 2.
     getUserPlayerRole(username: string) {
-        const users = this.getUsers();
+        const users = this.getUsernames();
 
         if (username === users[0]) {
             return "p1";

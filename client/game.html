@@ -76,6 +76,7 @@
         const globals = {
             board: null,
             timeDisplay: null,
+            userDataRundown: null,
         };
 
         function updateGameInfoSection(gameInfo) {
@@ -87,8 +88,10 @@
                 displayElem.children[0].style.backgroundColor = gameInfo[label].color;
 
                 const username = gameInfo[label].username;
+                const { displayname, elo } = globals.userDataRundown[username];
+
                 displayElem.children[1].href = `/profile/${username}`;
-                displayElem.children[1].innerHTML = username;
+                displayElem.children[1].innerHTML = `${displayname} (${elo})`;
             }
         }
 
@@ -188,6 +191,8 @@
                 gameData.timeDesc,
             );
 
+            globals.userDataRundown = gameData.userDataRundown;
+
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
 
@@ -224,7 +229,10 @@
             for (const message of history) {
                 const { by, content } = message;
                 const messageElement = document.createElement("p");
-                messageElement.innerHTML = `${by}: ${content}`;
+
+                const byDisplayName = globals.userDataRundown[by].displayname;
+
+                messageElement.innerHTML = `${byDisplayName}: ${content}`;
             
                 historyElem.appendChild(messageElement);
             }

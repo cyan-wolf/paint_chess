@@ -3,6 +3,8 @@ import { Game } from "./game.ts";
 import * as data_access from "./data_access.ts";
 import { ChessAIUser } from "./chess_ai.ts";
 import { ActiveGames, GameManagerEvent, GameManagerEventHandler, GameQueue, GameSettings, ID, PlayerInfo, PlayerRegistry, QueuedGameClientView } from "./types/game_manager_types.d.ts";
+import { GameEndResult, RawMove } from "./types/game_types.d.ts";
+import { PublicUserData } from "./types/db_conn_types.d.ts";
 
 export class GameManager {
     queuedGamesDb: GameQueue;
@@ -316,7 +318,7 @@ export class GameManager {
             this.playerRegistry[username].joined = true;
         } 
         // Player is rejoining the game.
-        else if (game.getUsers().includes(username)) {
+        else if (game.getUsernames().includes(username)) {
             const gameData = game.asClientView(username);
             this.emitEvent(username, { kind: "game-start", payload: gameData });
 
@@ -330,7 +332,7 @@ export class GameManager {
             // Sets up various parts of the game.
             game.start();
 
-            for (const usernameInGame of game.getUsers()) {
+            for (const usernameInGame of game.getUsernames()) {
                 const gameData = game.asClientView(usernameInGame);
                 this.emitEvent(usernameInGame, { kind: "game-start", payload: gameData });
             }
@@ -357,7 +359,7 @@ export class GameManager {
         }
 
         // Send the result of the move to the users in the game.
-        for (const usernameInGame of game.getUsers()) {
+        for (const usernameInGame of game.getUsernames()) {
             const gameData = game.asClientView(usernameInGame);
 
             this.emitEvent(usernameInGame, {
@@ -396,7 +398,7 @@ export class GameManager {
         });
 
         // Send the chat to the users in the game.
-        for (const usernameInGame of game.getUsers()) {
+        for (const usernameInGame of game.getUsernames()) {
             this.emitEvent(usernameInGame, {
                 kind: "current-chat-history",
                 payload: {
@@ -432,13 +434,24 @@ export class GameManager {
 
         game.finish({
             // The other player wins.
-            winner: Game.togglePlayerRole(game.userToRole(username)),
+            winner: Game.togglePlayerRole(game.usernameToRole(username)),
             method: "resign",
         });
     }
 
+    fetchQueuedUserData(queuedUsernames: string[]): Promise<PublicUserData[]> {
+        return Promise.all(queuedUsernames.map(async (username) => {
+            const userData = await data_access.fetchUserData(username);
+
+            if (userData === null) {
+                throw new Error(`could not get data from user ${username}`);
+            }
+            return userData;
+        }));
+    }
+
     // Turns a queued game into an active game.
-    createGame(gameId: ID) {
+    async createGame(gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
             return; // prevent access to games that aren't being queued
         }
@@ -459,11 +472,13 @@ export class GameManager {
         // isn't always automatically Player 1 in the game.
         const p1Idx = Math.floor(Math.random() * 2);
         const p2Idx = (p1Idx + 1) % 2;
+        
+        const queuedUserData = await this.fetchQueuedUserData(queuedGame.waitingPlayers);
 
         const game = new Game({
             gameId,
-            p1: queuedGame.waitingPlayers[p1Idx], 
-            p2: queuedGame.waitingPlayers[p2Idx], 
+            p1: queuedUserData[p1Idx], 
+            p2: queuedUserData[p2Idx], 
             joinedPlayers: 0,
             secsPerPlayer: queuedGame.gameSettings.secsPerPlayer,
             hasStarted: false,
@@ -473,7 +488,7 @@ export class GameManager {
         game.addOnGameEndEventHandler((result) => {
             console.log(`LOG: game ended: ${JSON.stringify(result)}`);
 
-            const users = game.getUsers();
+            const users = game.getUsernames();
 
             // Determine the new ELO of each player.
             this.determineELORatings(users[0], users[1], result);
@@ -515,7 +530,7 @@ export class GameManager {
         });
 
         // Redirects the user to "/game/:id" on the client.
-        for (const usernameInGame of game.getUsers()) {
+        for (const usernameInGame of game.getUsernames()) {
             this.emitEvent(usernameInGame, {
                 kind: "found-game",
                 payload: { gameId },
