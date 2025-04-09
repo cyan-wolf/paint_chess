@@ -16,14 +16,34 @@
     <div class="how-to-play-content">
         <h1>How to Play</h1>
 
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Architecto, id voluptate omnis veniam voluptates ratione, cumque modi aliquid eligendi doloremque tenetur voluptatibus ipsa similique aut necessitatibus quas. Quam, esse amet.</p>
-    
-    
-        <div style="width: 60%; margin: auto;">
-            <div class="board" id="main-board"></div>
+        <div>
+            <h2>Overview<hr></h2>
+            <p>Paint Chess is a chess variant where the pieces leave behind paint when they move.</p>
         </div>
-
-        <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Inventore, impedit. Maiores officiis inventore, aliquid voluptates voluptatem eum asperiores! Aut magnam dolore quasi ullam distinctio dolores, quis dolorum harum quam eius.</p>
+        <div>
+            <h2>Rules<hr></h2>
+            <p>
+                This variant follows usual chess rules. A player can win if they checkmate the opponent  
+                or if the opponent resigns. A player loses if they run out of time. No player wins if a stalemate occurs.
+            </p>
+        </div>
+        <div>
+            <h2>Differences<hr></h2>
+            <p>
+                The big difference with this variant is the paint mechanic. At the start of a game, 
+                each player's pieces is assigned a color. When a player moves one of their pieces, 
+                it leaves behind a paint trail along the path that it moved. This trail can stop opponent 
+                pieces from moving through.
+            </p>
+        </div>
+        <div>
+            <h2>Examples<hr></h2>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum, quibusdam, architecto magnam vel unde, sit deserunt alias itaque aliquid ducimus rem atque maxime perferendis explicabo at temporibus nesciunt. Atque, placeat!</p>
+        </div>
+        <div>
+            <h2>How To Get Started<hr></h2>
+            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum, quibusdam, architecto magnam vel unde, sit deserunt alias itaque aliquid ducimus rem atque maxime perferendis explicabo at temporibus nesciunt. Atque, placeat!</p>
+        </div>
     </div>
 
     <script src="/public/scripts/board.js"></script>
@@ -33,38 +53,7 @@
     <script src="/public/scripts/navbar.js"></script>
 
     <script>
-        const mainBoardElem = document.getElementById("main-board");
- 
-        const board = new Board({
-            element: mainBoardElem,
-            isFlipped: false,
-            clickable: true,
-            colorConfig: {
-                p1: {
-                    piece: "red",
-                    bgLight: "#ffa99c",
-                    bgDark: "#61241f",
-                },
-                p2: {
-                    piece: "blue",
-                    bgLight: "#9ca4ff",
-                    bgDark: "#1f1f61",
-                },
-                boardDesc: genInitialChessBoardDesc(),
-            },
-        });
 
-        // The board descriptions are supposed to come from the server.
-        board.update({
-            boardDesc: genInitialChessBoardDesc(),
-            lastChangedCoords: new Set(),
-            checkStatus: null,
-        });
-        loadPieces();
-        
-        board.addOnMoveEventHandler((move) => {
-            console.log(move);
-        });
 
         window.addEventListener("load", async () => {
             await initNav();
