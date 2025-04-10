@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/how-to-play.css">
     <link rel="stylesheet" href="/public/styles/nav.css">
     <link rel="stylesheet" href="/public/styles/board.css">
     <title>Paint Chess | How to Play</title>
@@ -21,13 +22,6 @@
             <p>Paint Chess is a chess variant where the pieces leave behind paint when they move.</p>
         </div>
         <div>
-            <h2>Rules<hr></h2>
-            <p>
-                This variant follows usual chess rules. A player can win if they checkmate the opponent  
-                or if the opponent resigns. A player loses if they run out of time. No player wins if a stalemate occurs.
-            </p>
-        </div>
-        <div>
             <h2>Differences<hr></h2>
             <p>
                 The big difference with this variant is the paint mechanic. At the start of a game, 
@@ -35,10 +29,70 @@
                 it leaves behind a paint trail along the path that it moved. This trail can stop opponent 
                 pieces from moving through.
             </p>
+            <br>
+            <p>
+                Since the colors are no longer white and black, the starting player is no longer determined by color.
+                Rather, at the start of the game, each player is randomly designated as either Player 1 (P1) or Player 2 (P2). 
+                The user designated as Player 1 always moves first and acts as if they were white in standard chess.
+                You can tell what designation you received by looking at the additonal UI around the board.
+            </p>
+        </div>
+        <div>
+            <h2>Rules<hr></h2>
+            <p>
+                This variant follows usual chess rules. A player can win if they checkmate the opponent  
+                or if the opponent resigns. A player loses if they run out of time. No player wins if a stalemate occurs.
+            </p>
+            <br>
+            <p>
+                All pieces except knights leave a trail over where they moved. Since knights jump over pieces, they only 
+                leave a trail at the squares they moved from and where they landed.
+            </p>
+            <br>
+            <p>
+                A piece cannot move go thorugh a square painted by the opponent's pieces. A piece can move 
+                freely past unpainted and squares painted by your own pieces. A piece can paint over opponent paint 
+                by moving to that square. Note that a piece can only paint over the opponent's paint 1 square at a 
+                time.
+            </p>
         </div>
         <div>
             <h2>Examples<hr></h2>
-            <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum, quibusdam, architecto magnam vel unde, sit deserunt alias itaque aliquid ducimus rem atque maxime perferendis explicabo at temporibus nesciunt. Atque, placeat!</p>
+            <p>
+                This is an example of a game between a lime player (P1) and a purple player (P2).
+                The orange player is P1 in this case, so they get to move first. Notice that 
+                the squares under the player's pieces are painted, while the rest of the squares are 
+                grayed out.
+            </p>
+            <img src="/public/images/how-to-play/game-start.png" alt="the start of a game">
+
+            <p>
+                P1 moved one of their pawns from e2 to e4, leaving behind a trail.
+            </p>
+            <img src="/public/images/how-to-play/trail-showcase-1.png" alt="moving player 1's pawn from e2 to e4 leaving behind a trail">
+
+            <p>
+                P2 moved one of their pawns from from d7 to d5, also leaving behind a trail.
+            </p>
+            <img src="/public/images/how-to-play/trail-showcase-2.png" alt="moving player 2's pawn from d7 to d5 leaving behind a trail">
+
+            <p>
+                P1 moved their bishop from f1 to b5, leaving behind a diogonal trail. Note that P2's king is not in check in this variant, 
+                in stark contrast to standard chess. This is because the attacking bishop would need to cross a square painted by the 
+                opponent to actually reach the king which is against the rules of this variant, so P2's king is not in danger.
+            </p>
+            <img src="/public/images/how-to-play/trail-showcase-3.png" alt="moving player 1's bishop from f1 to b5 leaving behind a trail">
+
+            <p>
+                P2 decides to move one of their knights and then P1 brings the bishop closer. Note that only now is P2's king 
+                in check, since there are no opponent-painted squares between the P1 bishop and P2 king. 
+            </p>
+            <img src="/public/images/how-to-play/trail-showcase-4.png" alt="P1's bishop moves closer, which puts P2's king in check">
+
+            <p>
+                P2 caputures the attacking P1 bishop using the P2 queen. The trail left behind by P1's bishop remains.
+            </p>
+            <img src="/public/images/how-to-play/trail-showcase-5.png" alt="P2's queen captures P1's bishop">
         </div>
         <div>
             <h2>How To Get Started<hr></h2>
