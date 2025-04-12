@@ -9,19 +9,19 @@
 }
 
 .how-to-play-content>:nth-child(2) {
-    --variant-color: red;
+    --variant-color: #ff453b;
 }
 
 .how-to-play-content>:nth-child(3) {
-    --variant-color: rgb(255, 166, 0);
+    --variant-color: rgb(253, 187, 63);
 }
 
 .how-to-play-content>:nth-child(4) {
-    --variant-color: rgb(238, 255, 0);
+    --variant-color: rgb(243, 253, 97);
 }
 
 .how-to-play-content>:nth-child(5) {
-    --variant-color: rgb(43, 255, 0);
+    --variant-color: rgb(137, 255, 113);
 }
 
 .how-to-play-content>:nth-child(6) {
@@ -53,6 +53,10 @@
     border: 3px solid var(--variant-color);
     margin: 0;
     margin-bottom: 1em;
+}
+
+.how-to-play-content div .colored {
+    color: var(--variant-color);
 }
 
 .how-to-play-content div a {
