@@ -55,6 +55,10 @@
     margin-bottom: 1em;
 }
 
+.how-to-play-content div a {
+    color: var(--variant-color);
+}
+
 .how-to-play-content div p {
     margin: 0;
     padding: 0;
