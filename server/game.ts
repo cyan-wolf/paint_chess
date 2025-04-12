@@ -1,6 +1,6 @@
 import { Board } from "./board.ts";
 import { ID } from "./types/game_manager_types.d.ts";
-import { ColorConfig, GameEndDelegate, GameEndResult, GameViewForClient, Message, MetaGameInfo, MiscGameEventDelegate, RawMove, TimeInfo, UserDataRundown } from "./types/game_types.d.ts";
+import { ChatColorInfo, ColorConfig, GameEndDelegate, GameEndResult, GameViewForClient, Message, MetaGameInfo, MiscGameEventDelegate, RawMove, TimeInfo, UserDataRundown } from "./types/game_types.d.ts";
 
 export class Game {
     meta: MetaGameInfo
@@ -143,6 +143,10 @@ export class Game {
         userDataRundown[this.roleToUsername("p1")] = this.meta.p1;
         userDataRundown[this.roleToUsername("p2")] = this.meta.p2;
 
+        const chatColorInfo: ChatColorInfo = {};
+        chatColorInfo[this.roleToUsername("p1")] = this.colorConfig["p1"].bgLight;
+        chatColorInfo[this.roleToUsername("p2")] = this.colorConfig["p2"].bgLight;
+
         const data = {
             gameInfo: {
                 gameId: this.meta.gameId,
@@ -166,6 +170,7 @@ export class Game {
             boardDesc: this.board.toBoardDesc(),
             timeDesc,
             userDataRundown,
+            chatColorInfo,
             checkStatus: structuredClone(this.board.checkStatus),
             lastChangedCoords: Array.from(this.board.lastChangedCoords),
             legalMovesRundown: structuredClone(this.board.legalMovesRundown),

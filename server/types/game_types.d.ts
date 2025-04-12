@@ -38,6 +38,10 @@ type ColorConfig = {
     [player in PlayerRole]: ColorInfo
 };
 
+type ChatColorInfo = {
+    [username: string]: string,
+};
+
 /**
  * Used for filling out the "game-info" section on the client.
  */
@@ -75,6 +79,7 @@ type GameViewForClient = {
     userDataRundown: {
         [username: string]: PublicUserData,
     },
+    chatColorInfo: ChatColorInfo,
     ownRole: PlayerRole,
     turn: PlayerRole,
     checkStatus: CheckStatus,
