@@ -178,6 +178,11 @@
         });
 
         socket.on("game-start", (gameData) => {
+            // Do not initialize the board if it's already initalized.
+            if (globals.board !== null) {
+                return;
+            }
+
             const boardConfig = {
                 element: document.getElementById("main-board"),
                 clickable: true,
