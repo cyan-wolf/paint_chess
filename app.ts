@@ -78,6 +78,12 @@ declare module "npm:express-session@1.18.1" {
     }
 }
 
+// Globals.
+const gameManager = new GameManager();
+
+const socketManager = new SocketManager(io, gameManager);
+socketManager.wireSockets();
+
 // Setup routes.
 
 app.get('/', (_req, res) => {
@@ -209,6 +215,12 @@ app.post('/login', async (req, res) => {
 app.get('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
+        return;
+    }
+    if (gameManager.usernameIsInActiveGame(req.session.user.username)) {
+        const gameId = gameManager.playerRegistry[req.session.user.username].gameId!;
+        res.send(`INFO: Hold on! You are currently playing game-${gameId}`);
+        return;
     }
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
@@ -257,11 +269,6 @@ app.get('/profile/:username', async (req, res) => {
 app.get('/testing', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/testing.html"));
 });
-
-const gameManager = new GameManager();
-
-const socketManager = new SocketManager(io, gameManager);
-socketManager.wireSockets();
 
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;

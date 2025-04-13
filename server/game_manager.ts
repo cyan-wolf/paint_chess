@@ -63,7 +63,7 @@ export class GameManager {
     }
 
     // Determines whether the given user is in an active game.
-    usernameIsActive(username: string): boolean {
+    usernameIsInActiveGame(username: string): boolean {
         return Object.hasOwn(this.playerRegistry, username) && 
             this.playerRegistry[username].active;
     }
@@ -133,6 +133,10 @@ export class GameManager {
     userWantsToJoinQueuedGame(username: string, gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
             return; // ignore attempt if game ID is invalid
+        }
+
+        if (this.usernameIsInActiveGame(username)) {
+            return; // ignore attempt if the user is playing currently playing a game
         }
         
         if (this.usernameIsQueueingGame(username)) {
@@ -282,6 +286,10 @@ export class GameManager {
         if (!this.validateGameSettings(gameSettings)) {
             return;
         }
+        // Prevent players in the middle of games from queuing new ones.
+        if (this.usernameIsInActiveGame(username)) {
+            return;
+        }
         // Prevent a player that's already queuing from queuing more games.
         if (this.usernameIsQueueingGame(username)) {
             return;
@@ -297,7 +305,7 @@ export class GameManager {
     }
 
     userWantsToStartGame(username: string) {
-        if (!this.usernameIsActive(username)) {
+        if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
@@ -340,7 +348,7 @@ export class GameManager {
     }
 
     userWantsToPerformMove(username: string, move: RawMove) {
-        if (!this.usernameIsActive(username)) {
+        if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
@@ -376,7 +384,7 @@ export class GameManager {
     }
 
     userWantsToPublishMessage(username: string, content: unknown) {
-        if (!this.usernameIsActive(username)) {
+        if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
@@ -409,7 +417,7 @@ export class GameManager {
     }
 
     userWantsChatHistory(username: string) {
-        if (!this.usernameIsActive(username)) {
+        if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
@@ -425,7 +433,7 @@ export class GameManager {
     }
 
     userWantsToResign(username: string) {
-        if (!this.usernameIsActive(username)) {
+        if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
