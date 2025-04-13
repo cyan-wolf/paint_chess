@@ -20,6 +20,18 @@ function addTemporaryUser(generatedUsername: string, temporaryInfo: TemporaryUse
     temporaryUsersLocalDb[generatedUsername] = temporaryInfo;
 }
 
+/**
+ * Removes the temporary user from the local database.
+ * @returns `true` if the removal was successful.
+ */
+function removeTemporaryUser(generatedUsername: string) {
+    if (Object.hasOwn(temporaryUsersLocalDb, generatedUsername)) {
+        delete temporaryUsersLocalDb[generatedUsername];
+        return true;
+    }
+    return false;
+}
+
 function usernameIsTemporary(username: string): boolean {
     return username.startsWith("@") && Object.hasOwn(temporaryUsersLocalDb, username);
 }
@@ -83,7 +95,9 @@ async function setUserELO(username: string, newElo: number) {
 export {
     generateTemporaryUsername,
     tempUsernameAlreadyGenerated,
+    usernameIsTemporary,
     addTemporaryUser,
+    removeTemporaryUser,
     fetchUserData,
     setUserELO,
 };

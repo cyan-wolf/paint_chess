@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/nav.css">
+    <title>Paint Chess | Successful Registration</title>
+</head>
+<body>
+    <nav id="nav" class="nav">
+        <!-- Generated using JavaScript. -->
+    </nav>
+
+    <div>
+        <h1>Successful Registration</h1>
+        <p>
+            Successfully registered! Click <a href="/profile/{{username}}">here</a> to view your profile
+            or <a href="/find-game">here</a> to start playing.
+        </p>
+    </div>
+
+    <!-- For filling in the nav bar. -->
+    <script src="/public/scripts/navbar.js"></script>
+
+    <script>
+        window.addEventListener("load", async () => {
+            await initNav();
+        });
+    </script>
+</body>
+</html>

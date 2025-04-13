@@ -35,6 +35,9 @@ import "npm:hbs@4.2.0";
 import assert from "node:assert";
 import { SocketManager } from "./server/socket_manager.ts";
 
+// For user data access.
+import * as data_access from "./server/data_access.ts";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -116,13 +119,18 @@ app.get('/login', (req, res) => {
 
 app.get('/logout', (req, res) => {
     if (!req.session.user) {
-        res.redirect('/login');
+        // There is no session, so logging out doesn't do anything.
+        res.redirect("/");
         return;
     }
-    // TODO: delete the guest account if a user was using one
+    // Delete the guest account if a user was using one
+    const username = req.session.user.username;
+    if (data_access.usernameIsTemporary(username)) {
+        data_access.removeTemporaryUser(username);
+    }
 
     req.session.destroy(() => {});
-    res.redirect('/');
+    res.render("status/status-logout", {});
 });
 
 type RawRegisterRequest = {
@@ -190,8 +198,7 @@ app.post('/register', async (req, res) => {
     });
     console.log(`LOG: registered user ${username}`);
 
-    // TODO
-    res.send("SUCCESSFULLY REGISTERED");
+    res.render("status/status-successful-registration", { username });
 });
 
 app.post('/login', async (req, res) => {
@@ -219,7 +226,8 @@ app.get('/find-game', (req, res) => {
     }
     if (gameManager.usernameIsInActiveGame(req.session.user.username)) {
         const gameId = gameManager.playerRegistry[req.session.user.username].gameId!;
-        res.send(`INFO: Hold on! You are currently playing game-${gameId}`);
+
+        res.render("status/status-already-in-another-game", { gameId });
         return;
     }
     res.sendFile(path.join(__dirname, "client/find-game.html"));
@@ -249,7 +257,7 @@ app.get('/profile/:username', async (req, res) => {
     const userInfo = await fetchUserData(username);
 
     if (userInfo === null) {
-        res.send("USER NOT FOUND");
+        res.render("status/status-unknown-user", { username });
         return;
     }
 
@@ -282,14 +290,15 @@ app.get("/game/:id", (req, res) => {
 
     // Game ID must be valid.
     if (!gameManager.gameIdIsActive(gameId)) {
-        res.redirect("/find-game");
+        res.render("status/status-unknown-game", { gameId });
         return;
     }
 
     // User must be a player in the game.
-    // TODO: Spectator functionality could be added here.
     if (!gameManager.usernameInGame(username, gameId)) {
-        res.status(400).send("User is not playing this game");
+        // TODO: Spectator functionality could be added here.
+        res.render("status/status-not-playing-current-game", { gameId });
+        return;
     }
 
     res.sendFile(path.join(__dirname, "client/game.html"));
