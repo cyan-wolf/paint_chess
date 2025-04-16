@@ -1,0 +1,17 @@
+
+
+.status-card {
+    width: 60vw;
+    margin: auto;
+    margin-top: 25vh;
+    padding: 1em;
+    font-size: 1.5em;
+    background-color: rgb(70, 70, 70);
+    text-align: center;
+    color: rgb(214, 214, 214);
+}
+
+.status-card a {
+    color: white;
+}
+

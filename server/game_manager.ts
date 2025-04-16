@@ -230,10 +230,6 @@ export class GameManager {
         const eloP1 = this.getUserELO(usernameP1);
         const eloP2 = this.getUserELO(usernameP2);
 
-        if (eloP1 === undefined || eloP2 === undefined) {
-            throw new Error("could not compute player ELO");
-        }
-
         const outcomeValue = this.getOutcomeValue(gameResult);
         const k = 10;
 
