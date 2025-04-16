@@ -210,15 +210,25 @@ export class GameManager {
     }
 
     // Gets the given user's ELO rating.
-    async getUserELO(username: string): Promise<number | undefined> {
-        const user = await data_access.fetchUserData(username, false);
-        return user?.elo;
+    getUserELO(username: string): number {
+        // Get the game ID for this player.
+        const userGameId = this.playerRegistry[username].gameId;
+
+        if (userGameId === undefined) {
+            throw new Error("could not get player ELO");
+        }
+        
+        const game = this.activeGamesDb[userGameId];
+        const role: PlayerRole = game.usernameToRole(username);
+
+        // Get the ELO value cached in the game.
+        return game.meta[role].elo;
     }
 
     // Determines and sets new ELO ratings after a game.
     async determineELORatings(usernameP1: string, usernameP2: string, gameResult: GameEndResult): Promise<void> {
-        const eloP1 = await this.getUserELO(usernameP1);
-        const eloP2 = await this.getUserELO(usernameP2);
+        const eloP1 = this.getUserELO(usernameP1);
+        const eloP2 = this.getUserELO(usernameP2);
 
         if (eloP1 === undefined || eloP2 === undefined) {
             throw new Error("could not compute player ELO");
