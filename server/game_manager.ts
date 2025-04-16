@@ -383,17 +383,20 @@ export class GameManager {
         }
     }
 
-    userWantsToPublishMessage(username: string, content: unknown) {
+    userWantsToPublishMessage(username: string, rawContent: unknown) {
         if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
         }
 
-        if (typeof content !== 'string') {
+        if (typeof rawContent !== 'string') {
             return; // do not accept strange input
         }
 
-        if (content.trim().length === 0) {
+        // Remove leading and trailing whitespace from message.
+        const content = rawContent.trim();
+
+        if (content.length === 0 || content.length > 40) {
             return; // only accept valid messages
         }
 

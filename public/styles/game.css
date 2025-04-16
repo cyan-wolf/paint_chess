@@ -67,6 +67,7 @@ body {
     overflow-y: scroll;
     /* Makes chat history take up remaining space. */
     flex-grow: 10;
+
     padding: 1em;
 }
 

@@ -28,7 +28,8 @@
                 </div>
                 <div id="chat-area">
                     <div id="chat-history"></div>
-                    <input type="text" id="chat-input" placeholder="Say something in chat!">
+                    <input type="text" id="chat-input" 
+                        placeholder="Say something in chat!">
                 </div>
             </div>
             <div class="game-area">
@@ -218,10 +219,13 @@
         const chatInput = document.getElementById("chat-input");
         chatInput.addEventListener("keyup", ({ key }) => {
             if (key === "Enter") {
-                if (chatInput.value.trim().length === 0) {
+                const content = chatInput.value.trim();
+
+                if (content.length === 0 || content.length > 40) {
+                    window.alert("Message must be between 0 and 40 characters.");
                     return;
                 }
-                socket.emit("chat-publish", { content: chatInput.value });
+                socket.emit("chat-publish", { content });
                 chatInput.value = "";
             }
         });
