@@ -123,14 +123,7 @@ app.get('/logout', (req, res) => {
         res.redirect("/");
         return;
     }
-    // Delete the guest account if a user was using one
-    const username = req.session.user.username;
-    if (data_access.usernameIsTemporary(username)) {
-        data_access.removeTemporaryUser(username);
-    }
-
-    req.session.destroy(() => {});
-    res.render("status/status-logout", {});
+    res.sendFile(path.join(__dirname, "client/logout.html"));
 });
 
 type RawRegisterRequest = {
@@ -217,6 +210,23 @@ app.post('/login', async (req, res) => {
     else {
         res.redirect('/login');
     }
+});
+
+app.post('/logout', (req, res) => {
+    if (!req.session.user) {
+        // There is no session, so logging out doesn't do anything.
+        res.redirect("/");
+        return;
+    }
+
+    // Delete the guest account if a user was using one
+    const username = req.session.user.username;
+    if (data_access.usernameIsTemporary(username)) {
+        data_access.removeTemporaryUser(username);
+    }
+
+    req.session.destroy(() => {});
+    res.render("status/status-logout", {});
 });
 
 app.get('/find-game', (req, res) => {
