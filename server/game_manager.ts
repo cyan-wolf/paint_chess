@@ -119,6 +119,8 @@ export class GameManager {
             gameSettings,
         };
 
+        console.log(`LOG: queued new game ${gameId}`);
+
         if (gameSettings.vsAI) {
             const generatedUsername = data_access.generateTemporaryUsername("ai");
             //waitingPlayers.push(generatedUsername);

@@ -63,6 +63,19 @@ const sessionMiddleware = session({
 // Makes sessions accessible from route handlers.
 app.use(sessionMiddleware);
 
+// Saves when the user visits a "noteworthy" page.
+// Used for redirecting when the user finished logging in.
+app.use((req, _res, next) => {
+    const noteworthyURLs = new Set(['find-game', 'how-to-play', 'invite']);
+
+    const urlFirstPart = req.originalUrl.split('/')[1];
+
+    if (noteworthyURLs.has(urlFirstPart)) {
+        req.session.redirectTo = req.originalUrl;
+    }
+    next();
+});
+
 // Makes sessions accessible from socket event handlers.
 io.engine.use(sessionMiddleware);
 
@@ -71,13 +84,14 @@ app.set("view engine", "hbs");
 app.set("views", path.join(__dirname, "client-views"));
 
 type User = {
-    username: string
+    username: string,
 };
 
 // Augment express-session with a custom SessionData object.
 declare module "npm:express-session@1.18.1" {
     interface SessionData {
-      user: User;
+        user: User,
+        redirectTo?: string,
     }
 }
 
@@ -205,7 +219,10 @@ app.post('/login', async (req, res) => {
     if (user !== null) {
         req.session.user = user;
         
-        res.redirect('/');
+        // Redirect to the previous noteworthy page.
+        // This is set by middleware.
+        res.redirect(req.session.redirectTo ?? '/');
+        delete req.session.redirectTo;
     }
     else {
         res.redirect('/login');
@@ -247,6 +264,33 @@ app.get('/find-game', (req, res) => {
         return;
     }
     res.sendFile(path.join(__dirname, "client/find-game.html"));
+});
+
+app.get('/invite/:id', (req, res) => {
+    if (!req.session.user) {
+        res.redirect('/login');
+        return;
+    }
+
+    // TODO: to make this work I might need to setup a dummy page
+    //       to wire up client-side sockets instead of trying to 
+    //       hook everything up server side
+
+    // this isn't working vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+    const username = req.session.user.username;
+    const gameId = req.params.id;
+
+    if (! gameManager.gameIdIsQueued(gameId)) {
+        res.send("UNKNOWN GAME...");
+        return;
+    }
+    gameManager.saveUsernameToRegistry(username, (event) => {
+        if (event.kind === "found-game") {
+            res.redirect(`/game/${gameId}`);
+            gameManager.userWantsToStartGame(username);
+        }
+    });
+    gameManager.userWantsToJoinQueuedGame(username, gameId);
 });
 
 // This route is used for queueing games.
