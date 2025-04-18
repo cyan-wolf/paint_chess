@@ -36,6 +36,10 @@ function usernameIsTemporary(username: string): boolean {
     return username.startsWith("@") && Object.hasOwn(temporaryUsersLocalDb, username);
 }
 
+function usernameIsAI(username: string): boolean {
+    return usernameIsTemporary(username) && username.startsWith("@ai-");
+}
+
 // Fetches (public) data from the user with the given username.
 // The user could be from an account or a temporary (i.e. guest) profile.
 async function fetchUserData(username: string, roundElo?: boolean): Promise<PublicUserData | null> {
@@ -96,6 +100,7 @@ export {
     generateTemporaryUsername,
     tempUsernameAlreadyGenerated,
     usernameIsTemporary,
+    usernameIsAI,
     addTemporaryUser,
     removeTemporaryUser,
     fetchUserData,

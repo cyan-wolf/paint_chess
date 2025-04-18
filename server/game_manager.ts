@@ -503,47 +503,7 @@ export class GameManager {
         this.activeGamesDb[gameId] = game;
 
         game.addOnGameEndEventHandler((result) => {
-            console.log(`LOG: game ended: ${JSON.stringify(result)}`);
-
-            const users = game.getUsernames();
-
-            // Determine the new ELO of each player.
-            this.determineELORatings(users[0], users[1], result);
-
-            for (const usernameInGame of users) {
-                const gameData = game.asClientView(usernameInGame);
-
-                // Send the final state of the game to all players before ending the game.
-                this.emitEvent(usernameInGame, {
-                    kind: "move-performed-response",
-                    payload: gameData,
-                });
-
-                // Ends the game for the user..
-                this.emitEvent(usernameInGame, {
-                    kind: "game-ended",
-                    payload: { result },
-                });
-
-                // Tell the user to play a "game-end" sound.
-                this.emitEvent(usernameInGame, {
-                    kind: "play-sound",
-                    payload: { sound: "game-end" },
-                });
-
-                // TODO: add a record of the results of the game to the database
-                // ...
-
-                // Reset the player's registry.
-                const playerInfo = this.playerRegistry[usernameInGame];
-                playerInfo.gameId = undefined;
-                playerInfo.active = false;
-                playerInfo.joined = false;
-                playerInfo.queueing = false;
-            }
-
-            // Make the game no longer active.
-            delete this.activeGamesDb[gameId];
+            this.finishGame(result, game);
         });
 
         // Redirects the user to "/game/:id" on the client.
@@ -553,6 +513,64 @@ export class GameManager {
                 payload: { gameId },
             });
         }
+    }
+
+    finishGame(gameEndResult: GameEndResult, game: Game) {
+        console.log(`LOG: game ended: ${JSON.stringify(gameEndResult)}`);
+
+        const users = game.getUsernames();
+
+        // Determine the new ELO of each player, as long 
+        // as there were no AI players in the game.
+        if (! users.some(data_access.usernameIsAI)) {
+            this.determineELORatings(users[0], users[1], gameEndResult);
+        }
+
+        for (const usernameInGame of users) {
+            const gameData = game.asClientView(usernameInGame);
+
+            // Send the final state of the game to all players before ending the game.
+            this.emitEvent(usernameInGame, {
+                kind: "move-performed-response",
+                payload: gameData,
+            });
+
+            // Ends the game for the user..
+            this.emitEvent(usernameInGame, {
+                kind: "game-ended",
+                payload: { result: gameEndResult },
+            });
+
+            // Tell the user to play a "game-end" sound.
+            this.emitEvent(usernameInGame, {
+                kind: "play-sound",
+                payload: { sound: "game-end" },
+            });
+
+            // TODO: add a record of the results of the game to the database
+            // ...
+
+            // Reset the player's registry.
+            const playerInfo = this.playerRegistry[usernameInGame];
+            playerInfo.gameId = undefined;
+            playerInfo.active = false;
+            playerInfo.joined = false;
+            playerInfo.queueing = false;
+        }
+
+        // Delete any AI users.
+        for (const username of users) {
+            if (data_access.usernameIsAI(username)) {
+                const removed = data_access.removeTemporaryUser(username);
+                
+                if (removed) {
+                    console.log(`LOG: removed ${username}`);
+                }
+            }
+        }
+
+        // Make the game no longer active.
+        delete this.activeGamesDb[game.meta.gameId];
     }
 }
 
