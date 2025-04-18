@@ -127,6 +127,29 @@ export class GameManager {
         return gameId;
     }
 
+    // Dequeues the player from a queued game.
+    // Does nothing if the player was not queuing a game.
+    userWantsToLeaveQueuedGame(username: string) {
+        if (! this.usernameIsQueueingGame(username)) {
+            // A user can't leave their queued game if they aren't 
+            // even queueing a game in the first place.
+            return;
+        }
+
+        // Dequeue the player.
+        const playerInfo = this.playerRegistry[username];
+        const queuedGame = this.queuedGamesDb[playerInfo.gameId!];
+
+        // Remove the player from the queued game.
+        const idx = queuedGame.waitingPlayers.indexOf(username);
+        queuedGame.waitingPlayers.splice(idx, 1);
+
+        // Delete the queued game if it no longer has any players.
+        if (queuedGame.waitingPlayers.length === 0) {
+            delete this.queuedGamesDb[playerInfo.gameId!];
+        }
+    }
+
     // Joins a player to the given game.
     userWantsToJoinQueuedGame(username: string, gameId: ID) {
         if (!this.gameIdIsQueued(gameId)) {
@@ -144,18 +167,9 @@ export class GameManager {
                 return;
             }
 
-            // Dequeue the player if they were already queuing.
-            const playerInfo = this.playerRegistry[username];
-            const oldQueuedGame = this.queuedGamesDb[playerInfo.gameId!];
-
-            // Remove the player from the old queued game.
-            const idx = oldQueuedGame.waitingPlayers.indexOf(username);
-            oldQueuedGame.waitingPlayers.splice(idx, 1);
-
-            // Delete the queued game if it no longer has any players.
-            if (oldQueuedGame.waitingPlayers.length === 0) {
-                delete this.queuedGamesDb[playerInfo.gameId!];
-            }
+            // Make the player leave their currently queued game 
+            // if they are trying to queue to another game.
+            this.userWantsToLeaveQueuedGame(username);
         }
 
         const queuedGame = this.queuedGamesDb[gameId];
