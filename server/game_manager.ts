@@ -2,9 +2,12 @@ import { Game } from "./game.ts";
 
 import * as data_access from "./data_access.ts";
 import { ChessAIUser } from "./chess_ai.ts";
-import { ActiveGames, GameManagerEvent, GameManagerEventHandler, GameQueue, GameSettings, ID, PlayerInfo, PlayerRegistry, QueuedGameClientView } from "./types/game_manager_types.d.ts";
+import { ActiveGames, GameManagerEvent, GameManagerEventHandler, GameQueue, GameSettings, PlayerInfo, PlayerRegistry, QueuedGameClientView } from "./types/game_manager_types.d.ts";
 import { GameEndResult, RawMove } from "./types/game_types.d.ts";
 import { PublicUserData } from "./types/db_conn_types.d.ts";
+
+import * as util from "../utils.ts";
+import { ID } from "../utils.ts";
 
 export class GameManager {
     queuedGamesDb: GameQueue;
@@ -15,11 +18,6 @@ export class GameManager {
         this.queuedGamesDb = {};
         this.activeGamesDb = {};
         this.playerRegistry = {};
-    }
-
-    // Placeholder ID generator.
-    genId(): ID {
-        return Math.random().toString().substring(2);
     }
 
     // Make sure that the game settings are valid.
@@ -114,7 +112,7 @@ export class GameManager {
 
     // Creates a new queued game.
     createQueuedGame(gameSettings: GameSettings): ID {
-        const gameId = this.genId();
+        const gameId = util.genId();
 
         this.queuedGamesDb[gameId] = {
             waitingPlayers: [],

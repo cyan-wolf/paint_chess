@@ -1,7 +1,6 @@
+import { ID } from "../../utils.ts";
 import { Game } from "../game.ts";
 import { GameEndResult, GameViewForClient, Message } from "./game_types.d.ts";
-
-type ID = string;
 
 type GameSettings = {
     secsPerPlayer: number,

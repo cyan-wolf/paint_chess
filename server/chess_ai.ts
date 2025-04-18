@@ -1,6 +1,8 @@
 import { GameManager } from "./game_manager.ts";
 import { GameViewForClient } from "./types/game_types.d.ts";
 
+import * as utils from "../utils.ts";
+
 export class ChessAIUser {
     username: string
     gameId: string
@@ -71,13 +73,13 @@ export class ChessAIUser {
      * Use "heuristics" to determine the next move. 
      */
     async getNextMove(_currBoardDesc: BoardDescription, legalMovesRundown: LegalMovesRundown): Promise<Move> {
-        await sleep(1000 * Math.random() * 10);
+        await utils.sleep(1000 * Math.random() * 10);
 
         const legalMoves = legalMovesRundown[this.ownRole!];
-        const chosenPieceCoord = choose(Object.keys(legalMoves));
+        const chosenPieceCoord = utils.choose(Object.keys(legalMoves));
 
         const landingCoords = legalMoves[chosenPieceCoord];
-        const chosenLandingCoord = choose(landingCoords);
+        const chosenLandingCoord = utils.choose(landingCoords);
 
         const move: Move = { from: chosenPieceCoord, to: chosenLandingCoord, player: this.ownRole! };
         return move;
@@ -111,15 +113,8 @@ export class ChessAIUser {
             "Pretty good move.",
         ];
 
-        const chosenResponse = choose(chatResponses);
+        const chosenResponse = utils.choose(chatResponses);
         this.gameManager.userWantsToPublishMessage(this.username, chosenResponse);
     }
 }
 
-function choose<T>(array: T[]): T {
-    return array[Math.floor(Math.random() * array.length)];
-}
-
-function sleep(milisecs: number) {
-    return new Promise(resolve => setTimeout(resolve, milisecs));
-}

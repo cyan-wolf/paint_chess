@@ -1,19 +1,16 @@
 import db from "./db_conn.ts";
 import { TemporaryUserDb, PublicUserData, TemporaryUserInfo, UserSchema } from "./types/db_conn_types.d.ts";
 
+import * as utils from "../utils.ts";
+
 const temporaryUsersLocalDb: TemporaryUserDb = {};
 
 function tempUsernameAlreadyGenerated(generatedUsername: string): boolean {
     return Object.hasOwn(temporaryUsersLocalDb, generatedUsername);
 }
 
-// Placeholder ID generator.
-function genId(): string {
-    return Math.random().toString().substring(2);
-}
-
 function generateTemporaryUsername(prefix: "guest" | "ai") {
-    return `@${prefix}-${genId()}`;
+    return `@${prefix}-${utils.genId()}`;
 }
 
 function addTemporaryUser(generatedUsername: string, temporaryInfo: TemporaryUserInfo) {
