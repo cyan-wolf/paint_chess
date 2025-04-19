@@ -154,6 +154,13 @@ export class GameManager {
 
     // Joins a player to the given game.
     userWantsToJoinQueuedGame(username: string, gameId: ID) {
+        if (!this.usernameInRegistry(username)) {
+            // User is not in registry, therefore cannot 
+            // receive game manager events.
+            console.log(`LOG: user ${username} is not in registry.`);
+            return; 
+        }
+
         if (!this.gameIdIsQueued(gameId)) {
             return; // ignore attempt if game ID is invalid
         }

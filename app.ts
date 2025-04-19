@@ -271,26 +271,19 @@ app.get('/invite/:id', (req, res) => {
         res.redirect('/login');
         return;
     }
-
-    // TODO: to make this work I might need to setup a dummy page
-    //       to wire up client-side sockets instead of trying to 
-    //       hook everything up server side
-
-    // this isn't working vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-    const username = req.session.user.username;
+    //const username = req.session.user.username;
     const gameId = req.params.id;
 
+    // A user can only join queued games when using invite links.
     if (! gameManager.gameIdIsQueued(gameId)) {
-        res.send("UNKNOWN GAME...");
+        res.render("status/status-unknown-game", { gameId });
         return;
     }
-    gameManager.saveUsernameToRegistry(username, (event) => {
-        if (event.kind === "found-game") {
-            res.redirect(`/game/${gameId}`);
-            gameManager.userWantsToStartGame(username);
-        }
-    });
-    gameManager.userWantsToJoinQueuedGame(username, gameId);
+
+    // Temporary page used for connecting to sockets and then immediately 
+    // requesting to join the game with the given ID.
+    // The game ID is hard coded on the temp page using templating.
+    res.render("invite", { gameId });
 });
 
 // This route is used for queueing games.

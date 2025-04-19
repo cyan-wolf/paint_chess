@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint Chess | Invite</title>
+</head>
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        // Immediately connect the client-side sockets and tell 
+        // the server to join with the game ID given through templating.
+        const socket = io();
+        socket.emit("join-game-request", { gameId: "{{gameId}}" });
+
+        // Move to the game page once the game is found.
+        socket.on("found-game", ({ gameId }) => {
+            window.location = `/game/${gameId}`;
+        });
+    </script>
+</body>
+</html>
