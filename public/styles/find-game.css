@@ -17,19 +17,22 @@ body {
 .game-settings {
     background-color: rgb(77, 77, 77);
     margin-bottom: 40px;
+    height: 25vh;
 }
 
-.game-settings #queue-btn {
-    margin-top: 20px;
-
+.game-settings button {
     color: white;
     background-color: rgb(34, 34, 34);
     border: none;
     padding: 10px;
 }
 
-.game-settings #queue-btn:hover {
+.game-settings button:hover {
     background-color: rgb(61, 61, 61);
+}
+
+.game-settings #queue-btn {
+    margin-top: 20px;
 }
 
 #game-queue > div {
@@ -47,7 +50,7 @@ body {
 
 #game-queue > div span {
     width: 20%;
-    text-align: left;
+    text-align: center;
 }
 
 #game-queue > div span.username {
@@ -61,7 +64,7 @@ body {
         height: 100%;
     }
 
-    #game-queue > div span.username {
-        display: none;
+    .game-settings {
+        height: 30vh;
     }
 }

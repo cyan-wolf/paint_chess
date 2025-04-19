@@ -66,11 +66,18 @@ export class GameManager {
             this.playerRegistry[username].active;
     }
 
-    // Determines whether the given username is in the game 
+    // Determines whether the given username is in the (active) game 
     // with the given ID.
-    usernameInGame(username: string, gameId: ID): boolean {
+    usernameInGivenActiveGame(username: string, gameId: ID): boolean {
         return this.gameIdIsActive(gameId) && 
             this.activeGamesDb[gameId].hasUser(username);
+    }
+
+    // Determines whether the given username is in the (queued) game 
+    // with the given ID.
+    usernameInGivenQueuedGame(username: string, gameId: ID): boolean {
+        return this.gameIdIsQueued(gameId) && 
+            this.queuedGamesDb[gameId].waitingPlayers.includes(username);
     }
 
     usernameInRegistry(username: string): boolean {
@@ -307,19 +314,24 @@ export class GameManager {
         }
     }
 
-    // Makes the user queue a new game using the given settings.
-    userWantsQueueNewGame(username: string, gameSettings: GameSettings) {
+    /**
+     * Makes the user queue a new game using the given settings.
+     * @param username The identifier for the user.
+     * @param gameSettings The settings for the game to be queued.
+     * @returns The ID of the game if queuing was successfull, `null` otherwise.
+     */
+    userWantsQueueNewGame(username: string, gameSettings: GameSettings): ID | null {
         // Game settings must be valid.
         if (!this.validateGameSettings(gameSettings)) {
-            return;
+            return null;
         }
         // Prevent players in the middle of games from queuing new ones.
         if (this.usernameIsInActiveGame(username)) {
-            return;
+            return null;
         }
         // Prevent a player that's already queuing from queuing more games.
         if (this.usernameIsQueueingGame(username)) {
-            return;
+            return null;
         }
         const gameId = this.createQueuedGame(gameSettings);
 
@@ -329,6 +341,7 @@ export class GameManager {
         // Update the game queue for all users.
         // TODO: ...
         //this.emitGameManagerEventToAll({ kind: "current-game-queue", payload: await this.genClientGameQueueSlice() });
+        return gameId;
     }
 
     userWantsToStartGame(username: string) {

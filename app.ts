@@ -271,8 +271,20 @@ app.get('/invite/:id', (req, res) => {
         res.redirect('/login');
         return;
     }
-    //const username = req.session.user.username;
+    const username = req.session.user.username;
     const gameId = req.params.id;
+
+    // A user cannot join an invite if already in an active game.
+    if (gameManager.usernameIsInActiveGame(username)) {
+        res.render("status/status-already-in-another-game", { gameId });
+        return;
+    }
+
+    // A user cannot join their own queued game using an invite.
+    if (gameManager.usernameInGivenQueuedGame(username, gameId)) {
+        res.render("status/status-cannot-join-queued-game", { gameId });
+        return;
+    }
 
     // A user can only join queued games when using invite links.
     if (! gameManager.gameIdIsQueued(gameId)) {
@@ -348,7 +360,7 @@ app.get("/game/:id", (req, res) => {
     }
 
     // User must be a player in the game.
-    if (!gameManager.usernameInGame(username, gameId)) {
+    if (!gameManager.usernameInGivenActiveGame(username, gameId)) {
         // TODO: Spectator functionality could be added here.
         res.render("status/status-not-playing-current-game", { gameId });
         return;

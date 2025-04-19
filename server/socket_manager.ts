@@ -32,10 +32,23 @@ export class SocketManager {
             
             // When the client wants to queue a new game.
             socket.on("queue-game", async ({ gameSettings }) => {
-                this.gameManager.userWantsQueueNewGame(username, gameSettings);
+                const gameId = this.gameManager.userWantsQueueNewGame(username, gameSettings);
+
+                // This is for sending the game ID to the `/find-game` page.
+                if (gameId !== null) {
+                    this.io.to(socket.id).emit("game-queue-success-response", { gameId });
+                }
 
                 const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
                 this.io.to(socket.id).emit("current-game-queue", gameQueueClientView);
+            });
+
+            // This is for sending the game ID to the `/find-game` page.
+            socket.on("request-own-game-queue-status", () => {
+                if (this.gameManager.usernameIsQueueingGame(username)) {
+                    const gameId = this.gameManager.playerRegistry[username].gameId!;
+                    this.io.to(socket.id).emit("game-queue-success-response", { gameId });
+                }
             });
 
             // When the client wants to see the current game queue.

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/nav.css">
+    <link rel="stylesheet" href="/public/styles/status.css">
+    <title>Paint Chess | Cannot Join Queued Game</title>
+</head>
+<body>
+    <nav id="nav" class="nav">
+        <!-- Generated using JavaScript. -->
+    </nav>
+
+    <div class="status-card">
+        <h1>Cannot Join Queued Game</h1>
+        <p>
+            Error! Could not join the queued game with ID {{gameId}}.
+        </p>
+    </div>
+
+    <!-- For filling in the nav bar. -->
+    <script src="/public/scripts/navbar.js"></script>
+
+    <script>
+        window.addEventListener("load", async () => {
+            await initNav();
+        });
+    </script>
+</body>
+</html>

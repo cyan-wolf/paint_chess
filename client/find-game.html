@@ -30,6 +30,10 @@
                 <br>
                 
                 <button id="queue-btn">Queue Game</button>
+
+                <div id="copy-section" style="display: none;">
+                    <p>Copy Invite Link: <button id="copy-btn" type="button">Copy</button></p>
+                </div>
             </div>
 
             <h1>Current Games</h1>
@@ -60,6 +64,18 @@
         socket.emit("queue-game", { gameSettings });
     });
 
+    socket.on("game-queue-success-response", ({ gameId }) => {
+        const inviteLink = `${window.location.origin}/invite/${gameId}`;
+        
+        document.getElementById("copy-section").style.display = "block";
+
+        const copyBtnElem = document.getElementById("copy-btn");
+        copyBtnElem.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(inviteLink);
+            copyBtnElem.innerHTML = "Copied!";
+        });
+    });
+
     socket.on("current-game-queue", (queuedGames) => {
         const gameQueueElem = document.getElementById("game-queue");
         gameQueueElem.innerHTML = "";
@@ -75,7 +91,7 @@
 
             const gameJoinElem = document.createElement("div");
             
-            gameJoinElem.innerHTML += `<span class="username">${waitingUsername}</span>`;
+            //gameJoinElem.innerHTML += `<span class="username">${waitingUsername}</span>`;
             gameJoinElem.innerHTML += `<span>${waitingDisplayname}</span>`;
             gameJoinElem.innerHTML += `<span>(${waitingELO})</span>`;
             gameJoinElem.innerHTML += `<span>${gameMins}</span>`;
@@ -95,6 +111,10 @@
     // Request the server for the game queue on page load.
     window.addEventListener("load", async () => {
         socket.emit("request-current-game-queue");
+
+        // Ask the server if the current user is queuing a game.
+        // Used for showing the game invite copy button.
+        socket.emit("request-own-game-queue-status");
 
         await initNav();
     });
