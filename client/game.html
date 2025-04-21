@@ -79,6 +79,7 @@
             timeDisplay: null,
             userDataRundown: null,
             chatColorInfo: null,
+            gameAlreadyFinished: false,
         };
 
         function updateGameInfoSection(gameInfo) {
@@ -169,6 +170,12 @@
             document.getElementById("game-result").innerHTML = resultText;
         }
 
+        function reloadWindowIfGameAlreadyEnded() {
+            if (globals.gameAlreadyFinished) {
+                window.location.reload();
+            }
+        }
+
         const socket = io();
         
         window.addEventListener("load", async () => {
@@ -212,6 +219,8 @@
         });
 
         socket.on("move-performed-response", (gameData) => {
+            reloadWindowIfGameAlreadyEnded();
+
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
         });
@@ -235,6 +244,8 @@
         });
 
         socket.on("current-chat-history", ({ history }) => {
+            reloadWindowIfGameAlreadyEnded();
+
             const historyElem = document.getElementById("chat-history");
             historyElem.innerHTML = "";
 
@@ -265,6 +276,8 @@
             globals.board.clickable = false;
 
             globals.timeDisplay.stop();
+
+            globals.gameAlreadyFinished = true;
 
             // Fill in the result text.
             fillInResultText(result);
