@@ -1,5 +1,6 @@
+import { ID } from "../utils.ts";
+import * as utils from "../utils.ts";
 import { Board } from "./board.ts";
-import { ID } from "./types/game_manager_types.d.ts";
 import { ChatColorInfo, ColorConfig, GameEndDelegate, GameEndResult, GameViewForClient, Message, MetaGameInfo, MiscGameEventDelegate, RawMove, TimeInfo, UserDataRundown } from "./types/game_types.d.ts";
 
 export class Game {
@@ -382,7 +383,7 @@ function genRandomColorConfig(): ColorConfig {
     ];
 
     // Pick a random config.
-    return configs[Math.floor(Math.random() * configs.length)];
+    return utils.choose(configs);
 }
 
 
