@@ -96,6 +96,15 @@ export class GameManager {
         }
     }
 
+    removeUsernameFromRegistry(username: string) {
+        if (this.usernameInRegistry(username)) {
+            delete this.playerRegistry[username];
+        }
+        else {
+            console.error(`ERROR: user (${username}) could not be removed from registry`);
+        }
+    }
+
     // Gets a player from the registry.
     getPlayer(username: string): PlayerInfo {
         if (!this.usernameInRegistry(username)) {
@@ -595,11 +604,7 @@ export class GameManager {
         // Delete any AI users.
         for (const username of users) {
             if (data_access.usernameIsAI(username)) {
-                const removed = data_access.removeTemporaryUser(username);
-                
-                if (removed) {
-                    console.log(`LOG: removed ${username}`);
-                }
+                data_access.clearLocalUserData(username, this);
             }
         }
 

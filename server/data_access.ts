@@ -2,6 +2,7 @@ import db from "./db_conn.ts";
 import { TemporaryUserDb, PublicUserData, TemporaryUserInfo, UserSchema } from "./types/db_conn_types.d.ts";
 
 import * as utils from "../utils.ts";
+import { GameManager } from "./game_manager.ts";
 
 const temporaryUsersLocalDb: TemporaryUserDb = {};
 
@@ -27,6 +28,27 @@ function removeTemporaryUser(generatedUsername: string) {
         return true;
     }
     return false;
+}
+
+/**
+ * Clears local user data. Deletes temporary user accounts.
+ * @param username The username of the user's data to clear locally.
+ * @param gameManager Reference to the game manager.
+ */
+function clearLocalUserData(username: string, gameManager: GameManager) {
+    // Make the user leave any queued games they are a part of.
+    gameManager.userWantsToLeaveQueuedGame(username);
+    
+    // Make the user resign any games they are a part of.
+    gameManager.userWantsToResign(username);
+
+    // Removes the user from the game manager's registry.
+    gameManager.removeUsernameFromRegistry(username);
+
+    // Delete user if temporary.
+    if (usernameIsTemporary(username)) {
+        removeTemporaryUser(username);
+    }
 }
 
 function usernameIsTemporary(username: string): boolean {
@@ -99,7 +121,7 @@ export {
     usernameIsTemporary,
     usernameIsAI,
     addTemporaryUser,
-    removeTemporaryUser,
+    clearLocalUserData,
     fetchUserData,
     setUserELO,
 };

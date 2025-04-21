@@ -236,17 +236,9 @@ app.post('/logout', (req, res) => {
         return;
     }
 
-    // Delete the guest account if a user was using one
+    // Delete the any locally-saved user data.
     const username = req.session.user.username;
-    if (data_access.usernameIsTemporary(username)) {
-        // Make the user leave any queued games they are a part of.
-        gameManager.userWantsToLeaveQueuedGame(username);
-
-        // Make the user resign any games they are a part of.
-        gameManager.userWantsToResign(username);
-
-        data_access.removeTemporaryUser(username);
-    }
+    data_access.clearLocalUserData(username, gameManager);
 
     req.session.destroy(() => {});
     res.render("status/status-logout", {});
