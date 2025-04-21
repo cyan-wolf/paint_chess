@@ -17,7 +17,27 @@
             <h1><span class="glow">Login</span></h1>
 
             <div class="login-section">
-                <h2>With Account</h2>
+                <h2 style="margin-top: 20px;">Enter a name to play:</h2>
+
+                <form action="/login" method="post">
+                    <label for="displayname">Display Name: </label>
+                    <input type="text" name="displayname" id="displayname"
+                        min="1"
+                        max="20"
+                        required>
+                    <br><br>
+
+                    <!-- 
+                        Hidden form field to indicate that the user wants to 
+                        login as a guest.
+                    -->
+                    <input hidden name="type" id="type" type="text" value="guest">
+
+                    <button id="btn-login-guest" class="btn-login" type="submit">Login as Guest</button>
+                </form>
+                <br><br><br>
+
+                <h2>Or login with an account:</h2>
 
                 <form action="/login" method="post">
                     <label for="username">Username: </label>
@@ -35,25 +55,6 @@
                     <input hidden name="type" id="type" type="text" value="account">
             
                     <button class="btn-login" type="submit">Login</button>
-                </form>
-
-                <h2 style="margin-top: 20px;">Or...</h2>
-
-                <form action="/login" method="post">
-                    <label for="displayname">Display Name: </label>
-                    <input type="text" name="displayname" id="displayname"
-                        min="1"
-                        max="20"
-                        required>
-                    <br><br>
-
-                    <!-- 
-                        Hidden form field to indicate that the user wants to 
-                        login as a guest.
-                    -->
-                    <input hidden name="type" id="type" type="text" value="guest">
-
-                    <button id="btn-login-guest" class="btn-login" type="submit">Login as Guest</button>
                 </form>
             </div>
         </div>
