@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="40" height="40" viewBox="0 0 40 40" xml:space="preserve">
+<desc>Created with Fabric.js 5.2.4</desc>
+<defs>
+</defs>
+<g transform="matrix(1 0 0 1 20 20)" id="ac7ba143-8a9a-4344-a386-78e61598a3a3"  >
+<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1; visibility: hidden;" vector-effect="non-scaling-stroke"  x="-20" y="-20" rx="0" ry="0" width="40" height="40" />
+</g>
+<g transform="matrix(Infinity NaN NaN Infinity 0 0)" id="a8cc0088-0785-4d51-ab06-3fa6863ecbfa"  >
+</g>
+<g transform="matrix(1 0 0 1 20 20)"  >
+<g style="" vector-effect="non-scaling-stroke"   >
+		<g transform="matrix(1 0 0 1 0 -12.63)"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 1.5; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: rgb(255,0,0); fill-rule: evenodd; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-22.5, -9.75)" d="M 8 12 C 8 13.104569499661586 7.1045694996615865 14 6 14 C 4.8954305003384135 14 4 13.104569499661586 4 12 C 4 10.895430500338414 4.8954305003384135 10 6 10 C 7.1045694996615865 10 8 10.895430500338414 8 12 z M 24.5 7.5 C 24.5 8.604569499661586 23.604569499661586 9.5 22.5 9.5 C 21.395430500338414 9.5 20.5 8.604569499661586 20.5 7.5 C 20.5 6.3954305003384135 21.395430500338414 5.5 22.5 5.5 C 23.604569499661586 5.5 24.5 6.395430500338413 24.5 7.499999999999999 z M 41 12 C 41 13.104569499661586 40.10456949966159 14 39 14 C 37.89543050033841 14 37 13.104569499661586 37 12 C 37 10.895430500338414 37.89543050033841 10 39 10 C 40.10456949966159 10 41 10.895430500338414 41 12 z M 16 8.5 C 16 9.604569499661586 15.104569499661586 10.5 14 10.5 C 12.895430500338414 10.5 12 9.604569499661586 12 8.5 C 12 7.3954305003384135 12.895430500338414 6.5 14 6.5 C 15.104569499661586 6.5 16 7.395430500338413 16 8.5 z M 33 9 C 33 10.104569499661586 32.10456949966159 11 31 11 C 29.895430500338414 11 29 10.104569499661586 29 9 C 29 7.8954305003384135 29.895430500338414 7 31 7 C 32.10456949966159 7 33 7.895430500338413 33 9 z" stroke-linecap="round" />
+</g>
+		<g transform="matrix(1 0 0 1 0 -4.63)"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 1.5; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: rgb(255,0,0); fill-rule: evenodd; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-22.5, -17.75)" d="M 9 26 C 17.5 24.5 30 24.5 36 26 L 38 14 L 31 25 L 31 11 L 25.5 24.5 L 22.5 9.5 L 19.5 24.5 L 14 10.5 L 14 25 L 7 14 L 9 26 z" stroke-linecap="round" />
+</g>
+		<g transform="matrix(1 0 0 1 0 9.69)"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 1.5; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: rgb(255,0,0); fill-rule: evenodd; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-22.5, -32.06)" d="M 9 26 C 9 28 10.5 28 11.5 30 C 12.5 31.5 12.5 31 12 33.5 C 10.5 34.5 10.5 36 10.5 36 C 9 37.5 11 38.5 11 38.5 C 17.5 39.5 27.5 39.5 34 38.5 C 34 38.5 35.5 37.5 34 36 C 34 36 34.5 34.5 33 33.5 C 32.5 31 32.5 31.5 33.5 30 C 34.5 28 36 28 36 26 C 27.5 24.5 17.5 24.5 9 26 z" stroke-linecap="round" />
+</g>
+		<g transform="matrix(1 0 0 1 0 9)"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 1.5; stroke-dasharray: none; stroke-linecap: round; stroke-dashoffset: 0; stroke-linejoin: round; stroke-miterlimit: 4; fill: none; fill-rule: evenodd; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-22.5, -31.38)" d="M 11.5 30 C 15 29 30 29 33.5 30 M 12 33.5 C 18 32.5 27 32.5 33 33.5" stroke-linecap="round" />
+</g>
+</g>
+</g>
+</svg>
