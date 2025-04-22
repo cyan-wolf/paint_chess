@@ -40,7 +40,7 @@ function fillNav(userInfo) {
 
     if (userInfo !== null) {
         const { username, displayname } = userInfo;
-        right.innerHTML += `<a href="/profile/${username}">${displayname}</a>`;
+        right.innerHTML += `<a href="/profile/${username}" class="nav-displayname">${displayname}</a>`;
     } else {
         right.innerHTML += `<a href="/register">Register</a>`;
         right.innerHTML += `<a href="/login">Login</a>`;
