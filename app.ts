@@ -299,13 +299,13 @@ app.post('/find-game', (req, res) => {
 
 app.get('/current-user-info', async (req, res) => {
     if (!req.session.user) {
-        res.send(null);
+        res.send({ userInfo: null });
         return;
     }
     const username = req.session.user.username;
 
     const userInfo = await fetchUserData(username);
-    res.send(userInfo);
+    res.send({ userInfo });
 });
 
 app.get('/profile/:username', async (req, res) => {

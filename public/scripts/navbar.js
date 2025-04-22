@@ -1,19 +1,19 @@
 
 async function initNav() {
-    const username = await fetchUsername();
-    fillNav({ username });
+    const userInfo = await fetchUserData();
+    fillNav(userInfo);
 }
 
-async function fetchUsername() {
+async function fetchUserData() {
     // Get the current user's username from the server.
     try {
         const response = await fetch("/current-user-info");
 
         if (!response.ok) {
-            throw new Error(`could not get current user information`);
+            return null;
         }
-        const userInfo = await response.json();
-        return userInfo.username;
+        const { userInfo } = await response.json();
+        return userInfo;
     }
     catch (error) {
         console.error(error.message);
@@ -21,9 +21,7 @@ async function fetchUsername() {
     return null;
 }
 
-function fillNav(navSettings) {
-    const { username } = navSettings;
-
+function fillNav(userInfo) {
     const nav = document.getElementById("nav");
 
     const left = document.createElement("div");
@@ -33,15 +31,16 @@ function fillNav(navSettings) {
     left.innerHTML += `<a href="/how-to-play">How to Play</a>`;
     left.innerHTML += `<a href="/find-game">Find Game</a>`;
 
-    if (username !== null) {
+    if (userInfo !== null) {
         left.innerHTML += `<a href="/logout">Logout</a>`;
     }
 
     const right = document.createElement("div");
     right.classList.add("nav-right");
 
-    if (username !== null) {
-        right.innerHTML += `<a href="/profile/${username}">${username}</a>`;
+    if (userInfo !== null) {
+        const { username, displayname } = userInfo;
+        right.innerHTML += `<a href="/profile/${username}">${displayname}</a>`;
     } else {
         right.innerHTML += `<a href="/register">Register</a>`;
         right.innerHTML += `<a href="/login">Login</a>`;
