@@ -33,4 +33,12 @@
     .profile-card {
         width: 90vw;
     }
+
+    .profile-card .heading-section h1 {
+        font-size: 1.2em;
+    }
+
+    .profile-card .heading-section p {
+        font-size: 1.2em;
+    }
 }
