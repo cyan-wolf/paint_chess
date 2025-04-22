@@ -9,6 +9,11 @@
     background-color: rgb(71, 71, 71);
 }
 
+.profile-card .heading-section em {
+    color: rgb(173, 173, 173);
+    font-style: normal;
+}
+
 .profile-card .heading-section h1 {
     font-size: 4em;
     margin: 0;

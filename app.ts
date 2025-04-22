@@ -319,7 +319,7 @@ app.get('/profile/:username', async (req, res) => {
     }
 
     // TODO: Allow users (with accounts) to customize this.
-    const description = (userInfo.isTemp) ? "This is a guest account." : "This is a user account.";
+    const description = (userInfo.isTemp) ? "This is a temporary account." : "This is a user account.";
 
     // TODO: Add more data to this, like ELO history.
     const profileInfo = { 

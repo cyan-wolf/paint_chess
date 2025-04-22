@@ -28,7 +28,7 @@ function fillNav(userInfo) {
     left.classList.add("nav-left");
 
     left.innerHTML += `<a href="/">Home</a>`;
-    left.innerHTML += `<a href="/how-to-play">How to Play</a>`;
+    left.innerHTML += `<a href="/how-to-play">About</a>`;
     left.innerHTML += `<a href="/find-game">Find Game</a>`;
 
     if (userInfo !== null) {
