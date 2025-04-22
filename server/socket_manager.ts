@@ -40,7 +40,9 @@ export class SocketManager {
                 }
 
                 const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
-                this.io.to(socket.id).emit("current-game-queue", gameQueueClientView);
+
+                // Send the updated game queue to all sockets.
+                this.io.emit("current-game-queue", gameQueueClientView);
             });
 
             // This is for sending the game ID to the `/find-game` page.
@@ -61,8 +63,7 @@ export class SocketManager {
             socket.on("join-game-request", async ({ gameId }) => {
                 this.gameManager.userWantsToJoinQueuedGame(username, gameId);
                 
-                // It might not be necessary to call this 
-                // vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                // Updates the game queue for all sockets.
                 const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
                 this.io.emit("current-game-queue", gameQueueClientView);
             });
