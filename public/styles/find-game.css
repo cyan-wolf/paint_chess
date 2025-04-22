@@ -53,9 +53,8 @@ body {
     text-align: center;
 }
 
-#game-queue > div span.username {
-    width: 30%;
-
+#game-queue > div .queue-displayname {
+    flex-grow: 1;
 }
 
 @media screen and (orientation: portrait) {
