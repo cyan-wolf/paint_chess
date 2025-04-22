@@ -21,16 +21,16 @@
                 <form action="/register" method="post">
                     <label for="username">Username: </label>
                     <input type="text" name="username" id="username"
-                        min="1"
-                        max="20"
+                        minlength="1"
+                        maxlength="20"
                         pattern="[A-Za-z\d_]+"
                         required>
                     <br><br>
 
                     <label for="displayname">Display Name: </label>
                     <input type="text" name="displayname" id="displayname"
-                        min="1"
-                        max="20"
+                        minlength="1"
+                        maxlength="20"
                         required>
                     <br><br>
 
@@ -46,11 +46,6 @@
                     
                     <button class="btn-login" type="submit">Register</button>
                 </form>
-
-                <!-- TODO: maybe add this to this page -->
-                <!-- <h2 style="margin-top: 20px;">Or...</h2>
-
-                <button id="btn-login-guest" class="btn-login" type="button">Login as Guest</button> -->
             </div>
         </div>
     </div>
