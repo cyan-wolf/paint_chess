@@ -35,6 +35,54 @@ body {
     margin-top: 20px;
 }
 
+#copy-section.hidden {
+    display: none;
+}
+
+#copy-section {
+    display: flex;
+    flex-direction: row;
+    padding: 1em;
+    justify-content: center;
+    gap: 1em;
+}
+
+#copy-section button {
+    width: 10em;
+}
+
+.qrcode-background-overlay {
+    display: inline;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.486);
+    width: 100%;
+    height: 100%;
+}
+
+.qrcode-popup {
+    display: inline-block;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translate(-50%, 0%);
+    background-color: black;
+}
+
+.qrcode-popup button {
+    color: white;
+    background-color: black;
+    font-size: 1.6em;
+    border: none;
+    outline: none;
+}
+
+.qrcode-popup img {
+    width: 30vw;
+    border: black 5px solid;
+}
+
 #game-queue > div {
     display: flex;
     justify-content: space-between;
@@ -61,6 +109,14 @@ body {
     .center-container {
         width: 90%;
         height: 100%;
+    }
+
+    /* .qrcode-popup {
+        width: 80%;
+    } */
+
+    .qrcode-popup img {
+        width: 80vw;
     }
 
     .game-settings {

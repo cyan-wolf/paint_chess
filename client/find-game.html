@@ -32,8 +32,9 @@
                 
                 <button id="queue-btn">Queue Game</button>
 
-                <div id="copy-section" style="display: none;">
-                    <p>Copy Invite Link: <button id="copy-btn" type="button">Copy</button></p>
+                <div id="copy-section" class="hidden">
+                    <div>Copy Invite Link: <button id="copy-btn" type="button">Copy</button></div>
+                    <div>QR Code: <button id="qrcode-btn">Show QR Code</button></div>
                 </div>
             </div>
 
@@ -47,7 +48,11 @@
 <!-- For filling in the nav bar. -->
 <script src="/public/scripts/navbar.js"></script>
 
+<!-- For connecting using sockets to a live feed of the queued games. -->
 <script src="/socket.io/socket.io.js"></script>
+
+<!-- For generating QR code invites. -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
 <script>
     const socket = io();
@@ -68,13 +73,15 @@
     socket.on("game-queue-success-response", ({ gameId }) => {
         const inviteLink = `${window.location.origin}/invite/${gameId}`;
         
-        document.getElementById("copy-section").style.display = "block";
+        document.getElementById("copy-section").classList.remove("hidden");
 
         const copyBtnElem = document.getElementById("copy-btn");
         copyBtnElem.addEventListener("click", async () => {
             await navigator.clipboard.writeText(inviteLink);
             copyBtnElem.innerHTML = "Copied!";
         });
+
+        configureQRCodePopup(inviteLink);
     });
 
     socket.on("current-game-queue", (queuedGames) => {
@@ -118,5 +125,71 @@
 
         await initNav();
     });
+
+    function chooseRandomQRCodeColor() {
+        const colors = [
+            // Red
+            "#61241f",
+            // Blue
+            "#1f1f61",
+            // Lime
+            "#1f6126",
+            // Purple
+            "#4a1f61",
+            // Orange
+            "#61481f",
+            // Cyan
+            "#1f5b61",
+            // Mint green
+            "#1f6152",
+            // Pink
+            "#611f5a",
+        ];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    function configureQRCodePopup(inviteLink) {
+        // Gets caputured as a closure.
+        let showingPopup = false;
+
+        const randColor = chooseRandomQRCodeColor();
+
+        const showQrCodeBtnElem = document.getElementById("qrcode-btn");
+        showQrCodeBtnElem.addEventListener("click", () => {
+            if (showingPopup) {
+                return;
+            }
+            showingPopup = true;
+
+            const bgOverlayElem = document.createElement("div");
+            bgOverlayElem.classList.add("qrcode-background-overlay");
+
+            const popupElem = document.createElement("div");
+            popupElem.classList.add("qrcode-popup");
+
+            const removePopupBtnELem = document.createElement("button");
+            removePopupBtnELem.innerHTML = 'X';
+
+            removePopupBtnELem.addEventListener("click", () => {
+                showingPopup = false;
+                document.body.removeChild(popupElem);
+                document.body.removeChild(bgOverlayElem);
+            });
+            popupElem.appendChild(removePopupBtnELem);
+
+            const qrCodeElem = document.createElement("div");
+
+            new QRCode(qrCodeElem, {
+                text: inviteLink,
+                colorDark : randColor,
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+            popupElem.appendChild(qrCodeElem);
+            
+            document.body.appendChild(bgOverlayElem);
+            document.body.appendChild(popupElem);
+        });
+    }
 </script>
 </html>
