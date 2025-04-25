@@ -64,6 +64,9 @@
     <!-- For loading the piece SVGs. -->
     <script src="/public/scripts/load_pieces.js"></script>
 
+    <!-- For showing the pawn promotion popup. -->
+    <script src="/public/scripts/pawn_promotion_popup.js"></script>
+
     <!-- For having access to the client-side Board class. -->
     <script src="/public/scripts/board.js"></script>
 
@@ -198,7 +201,8 @@
                 ...gameData.boardConfig,
             };
 
-            globals.board = new Board(boardConfig);
+            globals.board = new Board(boardConfig, new PawnPromotionPopupManager(loadPieces));
+            globals.board.pieceLoaderCallback = loadPieces;
 
             globals.timeDisplay = new TimeDisplay(
                 document.getElementById("remaining-own-time"),

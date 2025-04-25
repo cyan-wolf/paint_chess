@@ -55,3 +55,47 @@
     z-index: 1;
     background-color: rgba(255, 1, 1, 0.5);
 }
+
+.promotion-popup-bg-overlay {
+    display: inline;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, 0.575);
+    width: 100%;
+    height: 100%;
+}
+
+.promotion-popup {
+    display: inline-block;
+    position: absolute;
+    top: 10%;
+    left: 20%;
+    transform: translate(-50%, 0%);
+    background-color: black;
+}
+
+.promotion-option {
+    width: 8vw;
+    aspect-ratio: 1;
+    margin: auto;
+    --color-light: white;
+    --color-dark: black;
+    background-color: var(--color-dark);
+}
+
+.promotion-option:hover {
+    background-color: var(--color-light);
+}
+
+@media screen and (orientation: portrait) {
+    .promotion-popup {
+        top: 40%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+
+    .promotion-option {
+        width: 20vw;
+    }
+}

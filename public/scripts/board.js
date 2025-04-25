@@ -3,7 +3,10 @@
 class Board {
     // Initializes the given board after being given 
     // an element to fill in with slots.
-    constructor(boardConfig) {
+    constructor(boardConfig, promotionPopupManager) {
+        // Used for showing the pawn promotion UI.
+        this.promotionPopupManager = promotionPopupManager;
+
         const { element, isFlipped, clickable, colorConfig } = boardConfig;
 
         this.boardElem = element;
@@ -50,7 +53,7 @@ class Board {
         this.boardPositions[chessCoord] = slot;
 
         // Handles click events.
-        slot.addEventListener("click", () => {
+        slot.addEventListener("click", async () => {
             if (!this.clickable) {
                 return;
             }
@@ -71,7 +74,7 @@ class Board {
             // call all the `onMove` event handlers with the 
             // moved performed by the player.
             for (const onMove of this.onMoveDelegates) {
-                const promotionPiece = this.detectPawnPromotionMove(this.lastClickedCoord, chessCoord);
+                const promotionPiece = await this.detectPawnPromotionMove(this.lastClickedCoord, chessCoord);
 
                 // Construct the move.
                 const move = {
@@ -138,15 +141,14 @@ class Board {
         }
     }
 
-    detectPawnPromotionMove(fromCoord, toCoord) {
+    async detectPawnPromotionMove(fromCoord, toCoord) {
         if (this.ownRole !== this.turn) {
             // No reason to show promotion UI if it's not 
             // the player's turn.
             return;
         }
-        const validPieces = new Set(["queen", "rook", "bishop", "knight"]);
-
         const slotData = this.boardDesc[fromCoord];
+
         if (slotData !== undefined && slotData.piece === "pawn") {
             const fromPos = chessCoordToRowCol(fromCoord);
             const toPos = chessCoordToRowCol(toCoord);
@@ -161,11 +163,7 @@ class Board {
                 (reachedRank === 0) : (reachedRank === 7);
 
             if (wasInSecondToLastRank && reachedLastRank) {
-                let piece;
-
-                while (!validPieces.has(piece?.trim())) {
-                    piece = prompt("Pawn promotion", "queen");
-                }
+                const piece = await this.showPawnPromotionPopup();
                 return piece;
             }
         }
@@ -289,6 +287,13 @@ class Board {
 
     getDefaultDarkSlotColor() {
         return "#787777";
+    }
+
+    // Shows the pawn promotion UI.
+    // Returns the piece that the player choose.
+    showPawnPromotionPopup() {
+        const colorInfo = this.colorConfig[this.ownRole];
+        return this.promotionPopupManager.showAndGetPiece(colorInfo);
     }
 }
 
