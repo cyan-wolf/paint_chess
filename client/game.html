@@ -202,7 +202,6 @@
             };
 
             globals.board = new Board(boardConfig, new PawnPromotionPopupManager(loadPieces));
-            globals.board.pieceLoaderCallback = loadPieces;
 
             globals.timeDisplay = new TimeDisplay(
                 document.getElementById("remaining-own-time"),
