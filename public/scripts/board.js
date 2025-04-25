@@ -139,17 +139,28 @@ class Board {
     }
 
     detectPawnPromotionMove(fromCoord, toCoord) {
+        if (this.ownRole !== this.turn) {
+            // No reason to show promotion UI if it's not 
+            // the player's turn.
+            return;
+        }
         const validPieces = new Set(["queen", "rook", "bishop", "knight"]);
 
         const slotData = this.boardDesc[fromCoord];
         if (slotData !== undefined && slotData.piece === "pawn") {
+            const fromPos = chessCoordToRowCol(fromCoord);
             const toPos = chessCoordToRowCol(toCoord);
+
+            const prevRank = fromPos[0];
             const reachedRank = toPos[0];
             
+            const wasInSecondToLastRank = (this.ownRole === "p1") ? 
+                (prevRank === 1) : (prevRank === 6);
+
             const reachedLastRank = (this.ownRole === "p1") ?  
                 (reachedRank === 0) : (reachedRank === 7);
 
-            if (reachedLastRank) {
+            if (wasInSecondToLastRank && reachedLastRank) {
                 let piece;
 
                 while (!validPieces.has(piece?.trim())) {
@@ -200,6 +211,10 @@ class Board {
     update(gameData) {
         this.boardDesc = gameData.boardDesc;
         this.updateBoard();
+
+        // Used for preventing the pawn promotion UI from 
+        // appearing when it's not the player's turn.
+        this.turn = gameData.turn;
 
         this.ownRole = gameData.ownRole;
 
