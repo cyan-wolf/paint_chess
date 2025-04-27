@@ -214,8 +214,16 @@ export class Game {
 
         const { from, to, username, promotion } = rawMove;
 
-        // TODO: Add more validation.
-        if (from === undefined || to === undefined || username === undefined ) {
+        // Check that the properties are strings.
+        if (typeof(from) !== 'string' || typeof(to) !== 'string') {
+            return false;
+        }
+        // Check that the promotion promotion property is either a string or undefined.
+        if (typeof(promotion) !== 'string' && typeof(promotion) !== 'undefined') {
+            return false;
+        }
+        // Check that the `from` and `to` are chess coordinates.
+        if (! isValidChessCoord(from) || ! isValidChessCoord(to)) {
             return false;
         }
 
@@ -324,6 +332,21 @@ export class Game {
     static togglePlayerRole(role: PlayerRole): PlayerRole {
         return (role === "p1") ? "p2" : "p1";
     }
+}
+
+function isValidChessCoord(coordString: string): boolean {
+    if (coordString.length !== 2) {
+        return false;
+    }
+    const [rank, file] = coordString;
+
+    if (rank < 'a' || rank > 'h') {
+        return false;
+    }
+    if (file < '1' || file > '8') {
+        return false;
+    }
+    return true;
 }
 
 function genRandomColorConfig(): ColorConfig {

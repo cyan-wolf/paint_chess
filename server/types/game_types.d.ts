@@ -92,10 +92,10 @@ type GameViewForClient = {
  * verified before being able to be used as a proper `Move`.
  */
 type RawMove = { 
-    from?: string, 
-    to?: string, 
-    username?: string,
-    promotion?: string,
+    from?: unknown, 
+    to?: unknown, 
+    username: string,
+    promotion?: unknown,
 };
 
 type Message = {

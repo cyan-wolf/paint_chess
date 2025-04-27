@@ -396,7 +396,15 @@ export class GameManager {
         }
     }
 
-    userWantsToPerformMove(username: string, move: RawMove) {
+    /**
+     * The move payload should conform to the following interface:
+     * ```
+     * { from: string, to: string, promotion?: string }
+     * ```
+     * @param username The username of the submitter of the move.
+     * @param movePayload Should be an object that conforms to the given interface.
+     */
+    userWantsToPerformMove(username: string, movePayload: unknown) {
         if (!this.usernameIsInActiveGame(username)) {
             // Ignore socket if the player is not in a game.
             return; 
@@ -404,12 +412,14 @@ export class GameManager {
         const gameId = this.playerRegistry[username].gameId!;
         const game = this.activeGamesDb[gameId];
 
-        if (typeof move !== "object") {
+        if (typeof movePayload !== "object") {
             return; // do not accept strange input
         }
-        move.username = username;
-
-        const couldMove = game.processMove(move);
+        const rawMove: RawMove = {
+            username,
+            ...movePayload,
+        };
+        const couldMove = game.processMove(rawMove);
 
         if (!couldMove) {
             return;
