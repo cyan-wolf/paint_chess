@@ -4,16 +4,30 @@ class PawnPromotionPopupManager {
     constructor(pieceLoader) {
         // Needed to force-load the piece SVGs after building the UI.
         this.pieceLoader = pieceLoader;
+
+        this.currentlyShowing = false;
     }
 
     showAndGetPiece(colorInfo) {
         return new Promise((resolve) => {
+            if (this.currentlyShowing) {
+                resolve(null);
+                return;
+            }
+            this.currentlyShowing = true;
+
             const bgPopupOverlay = document.createElement("div");
             bgPopupOverlay.classList.add("promotion-popup-bg-overlay");
     
             const popupElem = document.createElement("div");
             popupElem.classList.add("promotion-popup");
     
+            // Helper function for making the UI disappear.
+            const stopShowing = () => {
+                this.currentlyShowing = false;
+                document.body.removeChild(popupElem);
+                document.body.removeChild(bgPopupOverlay);
+            };
             const validPieces = new Set(["queen", "rook", "bishop", "knight"]);
     
             for (const piece of validPieces) {
@@ -28,15 +42,23 @@ class PawnPromotionPopupManager {
                 pieceOptionElem.style.setProperty("--color-light", colorInfo.bgLight);
                 pieceOptionElem.style.setProperty("--color-dark", colorInfo.bgDark);
     
+                // Resolves the enclosing Promise with the piece associated with this 
+                // element.
                 pieceOptionElem.addEventListener("click", () => {
-                    document.body.removeChild(popupElem);
-                    document.body.removeChild(bgPopupOverlay);
+                    stopShowing();
                     resolve(piece);
-                })
+                });
     
                 pieceOptionElem.appendChild(pieceSpan);
                 popupElem.appendChild(pieceOptionElem);
             }
+
+            // Resolves the enclosing promise with null if 
+            // no option was selected (because the background was clicked instead).
+            bgPopupOverlay.addEventListener("click", () => {
+                stopShowing();
+                resolve(null);
+            });
     
             document.body.appendChild(bgPopupOverlay);
             document.body.appendChild(popupElem);

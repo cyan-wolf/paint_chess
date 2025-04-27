@@ -162,7 +162,10 @@ class Board {
             const reachedLastRank = (this.ownRole === "p1") ?  
                 (reachedRank === 0) : (reachedRank === 7);
 
-            if (wasInSecondToLastRank && reachedLastRank) {
+            const pawnLegalMoves = this.legalMovesRundown[this.ownRole][fromCoord];
+            const wouldBeALegalMove = pawnLegalMoves.includes(toCoord);
+
+            if (wasInSecondToLastRank && reachedLastRank && wouldBeALegalMove) {
                 const piece = await this.showPawnPromotionPopup();
                 return piece;
             }

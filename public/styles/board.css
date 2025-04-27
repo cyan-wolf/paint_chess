@@ -64,6 +64,11 @@
     background-color: rgba(0, 0, 0, 0.575);
     width: 100%;
     height: 100%;
+    /*
+        Needs to be at least in front of the highlights 
+        used for showing slot information.
+    */
+    z-index: 2;
 }
 
 .promotion-popup {
@@ -73,6 +78,11 @@
     left: 20%;
     transform: translate(-50%, 0%);
     background-color: black;
+    /*
+        Needs to be at least in front of the 
+        promotion popup background overlay.
+    */
+    z-index: 3;
 }
 
 .promotion-option {
