@@ -453,7 +453,8 @@ export class GameManager {
         }
 
         // Remove leading and trailing whitespace from message.
-        const content = rawContent.trim();
+        // Escape any HTML.
+        const content = escapeHtml(rawContent.trim());
 
         if (content.length === 0 || content.length > 40) {
             return; // only accept valid messages
@@ -623,3 +624,13 @@ export class GameManager {
     }
 }
 
+// From: 
+// https://stackoverflow.com/questions/6234773/can-i-escape-html-special-chars-in-javascript/6234804#6234804
+function escapeHtml(unsafe: string): string {
+    return unsafe
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+};
