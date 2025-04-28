@@ -1,9 +1,17 @@
 # Paint Chess
 
-## How to play
+## Get Started
 Click [here](https://paint-chess.onrender.com/) to get started right away! All you need to play is a web browser and an internet connection.
 
-### Overview
+## Features
+* Playing timed chess games with other users.
+* Playing games with an AI.
+* Generating invite links to share with others so they can join.
+* Generating QR codes to show others so they can join your game.
+* In-game chat system.
+* Rating-system (ELO).
+
+## Overview
 Paint Chess is a chess variant where the pieces leave behind paint when they move. For more information, click [here](https://paint-chess.onrender.com/how-to-play).
 
 ### Differences
