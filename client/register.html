@@ -23,7 +23,7 @@
                     <input type="text" name="username" id="username"
                         minlength="1"
                         maxlength="20"
-                        pattern="[A-Za-z\d_]+"
+                        pattern="^[A-Za-z\d_]+$"
                         required>
                     <br><br>
 
@@ -31,6 +31,7 @@
                     <input type="text" name="displayname" id="displayname"
                         minlength="1"
                         maxlength="20"
+                        pattern="^[A-Za-z\d_\s]+$"
                         required>
                     <br><br>
 
@@ -41,6 +42,7 @@
 
                     <label for="password">Password: </label>
                     <input type="password" name="password" id="password"
+                        minlength="8"
                         required>
                     <br><br>
                     
