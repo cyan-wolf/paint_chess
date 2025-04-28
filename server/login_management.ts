@@ -6,6 +6,7 @@ import { UserSchema } from "./types/db_conn_types.d.ts";
 import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 import * as data_access from "./data_access.ts";
+import { isValidDisplayName } from "../utils.ts";
 
 // Validates the given login credentials.
 async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {
@@ -51,7 +52,7 @@ export async function tryLoginUser(reqBody?: RawLoginRequest): Promise<User | nu
     else if (reqBody?.type === "guest" && reqBody.displayname !== undefined) {
         const displayname = reqBody.displayname.trim();
 
-        if (displayname.length > 0 && displayname.length <= 20) {
+        if (isValidDisplayName(displayname)) {
             const generatedUsername = data_access.generateTemporaryUsername("guest");
 
             if (!data_access.tempUsernameAlreadyGenerated(generatedUsername)) {

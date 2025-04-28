@@ -6,7 +6,7 @@ import { ActiveGames, GameManagerEvent, GameManagerEventHandler, GameQueue, Game
 import { GameEndResult, RawMove } from "./types/game_types.d.ts";
 import { PublicUserData } from "./types/db_conn_types.d.ts";
 
-import * as util from "../utils.ts";
+import * as utils from "../utils.ts";
 import { ID } from "../utils.ts";
 
 export class GameManager {
@@ -128,7 +128,7 @@ export class GameManager {
 
     // Creates a new queued game.
     createQueuedGame(gameSettings: GameSettings): ID {
-        const gameId = util.genId();
+        const gameId = utils.genId();
 
         this.queuedGamesDb[gameId] = {
             waitingPlayers: [],
@@ -454,7 +454,7 @@ export class GameManager {
 
         // Remove leading and trailing whitespace from message.
         // Escape any HTML.
-        const content = escapeHtml(rawContent.trim());
+        const content = utils.escapeHtml(rawContent.trim());
 
         if (content.length === 0 || content.length > 40) {
             return; // only accept valid messages
@@ -623,14 +623,3 @@ export class GameManager {
         delete this.activeGamesDb[game.meta.gameId];
     }
 }
-
-// From: 
-// https://stackoverflow.com/questions/6234773/can-i-escape-html-special-chars-in-javascript/6234804#6234804
-function escapeHtml(unsafe: string): string {
-    return unsafe
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-};

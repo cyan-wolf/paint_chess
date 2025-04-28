@@ -38,6 +38,9 @@ import { SocketManager } from "./server/socket_manager.ts";
 // For user data access.
 import * as data_access from "./server/data_access.ts";
 
+// Utilities.
+import * as utils from "./utils.ts";
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -154,33 +157,47 @@ type RegisterRequest = {
     password: string,
 };
 
-function checkRegistration(reqBody: RawRegisterRequest): reqBody is RegisterRequest {
-    if (reqBody.username === undefined || 
-        reqBody.displayname === undefined ||
-        reqBody.password === undefined || 
-        reqBody.email === undefined) {
-        return false;
+function checkRegistration(reqBody: RawRegisterRequest): RegisterRequest | null {
+    if (typeof(reqBody.username) !== 'string' || 
+        typeof(reqBody.displayname) !== 'string' ||
+        typeof(reqBody.password) !== 'string' || 
+        typeof(reqBody.email) !== 'string') {
+        return null;
     }
-    if (!reqBody.username.match(/[A-Za-z\d_]+/) || 
-        reqBody.displayname.trim().length === 0 ||
-        reqBody.password.trim().length === 0 || 
-        reqBody.email.trim().length === 0) {
-        return false;
+    const { username, displayname, password, email } = reqBody;
+    if (! utils.isValidUsername(username.trim())) {
+        return null;
     }
-    return true;
+    if (! utils.isValidDisplayName(displayname.trim())) {
+        return null;
+    }
+    if (! utils.isValidPassword(password.trim())) {
+        return null;
+    }
+    if (! utils.isValidEmail(email.trim())) {
+        return null;
+    }
+    return {
+        username: username.trim(),
+        displayname: displayname.trim(),
+        password: password.trim(),
+        email: email.trim(),
+    };
 }
 
 app.post('/register', async (req, res) => {
     const reqBody = req.body;
 
-    if (!checkRegistration(reqBody)) {
+    const registration = checkRegistration(reqBody);
+
+    if (registration === null) {
         // Invalid registration.
         console.log("invalid registration");
 
         res.redirect("/");
         return;
     }
-    const { username, displayname, email, password: plaintextPassword } = reqBody;
+    const { username, displayname, email, password: plaintextPassword } = registration;
 
     const usersCollection = db.collection<UserSchema>("users");
 
