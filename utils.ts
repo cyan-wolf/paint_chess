@@ -36,13 +36,13 @@ export function isValidUsername(username: string): boolean {
 
 /**
  * A display name must be 1 to 20 characters long and must be 
- * composed of upper(lower) case letters, digits, and/or non-leading
- * nor trailing whitespace.
+ * composed of upper(lower) case letters, digits, underscores,
+ * and/or non-leading nor trailing whitespace.
  */
 export function isValidDisplayName(displayname: string): boolean {
     return displayname.length > 0 && 
         displayname.length <= 20 && 
-        /^[A-Za-z\d\s]+$/.test(displayname);
+        /^[A-Za-z\d_\s]+$/.test(displayname);
 }
 
 /**
