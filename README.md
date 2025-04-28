@@ -14,6 +14,8 @@ Click [here](https://paint-chess.onrender.com/) to get started right away! All y
 ## Overview
 Paint Chess is a chess variant where the pieces leave behind paint when they move. For more information, click [here](https://paint-chess.onrender.com/how-to-play).
 
+![Example game against an AI](public/images/examples/example_ai_match.png)
+
 ### Differences
 The big difference with this variant is the paint mechanic. At the start of a game, each player's pieces is assigned a color. When a player moves one of their pieces, it leaves behind a paint trail along the path that it moved. This trail can stop opponent pieces from moving through.
 
