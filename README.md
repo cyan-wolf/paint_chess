@@ -48,4 +48,4 @@ The front-end is moslty vanilla HTML+CSS+JavaScript. However a [library](https:/
 A [MongoDB](https://www.mongodb.com/) database is used.
 
 ## Credits
-I would like to thank [lichess](https://github.com/lichess-org/lila) for inspiration for making this project. Credits to [Colin M.L. Burnett](https://en.wikipedia.org/wiki/User:Cburnett) for making the `cburnett` piece set.
+I would like to thank [lichess](https://github.com/lichess-org/lila) for inspiration for making this project. Credits to [Colin M.L. Burnett](https://en.wikipedia.org/wiki/User:Cburnett) for making the `cburnett` piece set and to [Enigmahack](https://github.com/Enigmahack) for the sound effects.
