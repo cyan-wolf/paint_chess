@@ -348,10 +348,6 @@ app.get('/profile/:username', async (req, res) => {
     res.render("profile", profileInfo);
 });
 
-app.get('/testing', (_req, res) => {
-    res.sendFile(path.join(__dirname, "client/testing.html"));
-});
-
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;
 
