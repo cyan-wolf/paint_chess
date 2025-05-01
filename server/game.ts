@@ -15,6 +15,8 @@ export class Game {
     // Used to cancel the timer started by this game.
     intervalTimerCancelID: number
 
+    startingTimeoutCancelID?: number
+
     onGameEndDelegates: GameEndDelegate[]
     hasEnded: boolean
 
@@ -122,6 +124,8 @@ export class Game {
 
     start() {
         this.meta.hasStarted = true;
+
+        this.startingTimeoutCancelID = this.setupStartingTimeout();
     }
 
     asClientView(username: string): GameViewForClient {
@@ -244,6 +248,8 @@ export class Game {
         if (couldMove) {
             this.completedTurns++;
             this.toggleTimerCountdown();
+
+            this.updateStartingTimeout();
         }
 
         return couldMove;
@@ -306,6 +312,29 @@ export class Game {
             // Switches the user that the timer counts down.
             this.timeInfo[currentPlayer].lastTimestamp = performance.now();
             this.timeInfo[lastMovedPlayer].lastTimestamp = null;
+        }
+    }
+
+    setupStartingTimeout(): number {
+        const startingTimeOutMillis = 60 * 1000; // 1 minute
+
+        return setTimeout(() => {
+            this.finish({
+                method: "timeout",
+                winner: null,
+            });          
+        }, startingTimeOutMillis);
+    }
+
+    updateStartingTimeout() {
+        if (this.startingTimeoutCancelID === undefined) {
+            return;
+        }
+        clearTimeout(this.startingTimeoutCancelID);
+        this.startingTimeoutCancelID = undefined;
+
+        if (this.completedTurns < 2) {
+            this.startingTimeoutCancelID = this.setupStartingTimeout();
         }
     }
 

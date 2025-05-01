@@ -105,6 +105,14 @@ export class GameManager {
         }
     }
 
+    resetRegistryData(username: string) {
+        const playerInfo = this.playerRegistry[username];
+        playerInfo.gameId = undefined;
+        playerInfo.active = false;
+        playerInfo.joined = false;
+        playerInfo.queueing = false;
+    }
+
     // Gets a player from the registry.
     getPlayer(username: string): PlayerInfo {
         if (!this.usernameInRegistry(username)) {
@@ -444,7 +452,7 @@ export class GameManager {
 
     userWantsToPublishMessage(username: string, rawContent: unknown) {
         if (!this.usernameIsInActiveGame(username)) {
-            // Ignore socket if the player is not in a game.
+            // Ignore if the player is not in a game.
             return; 
         }
 
@@ -603,17 +611,13 @@ export class GameManager {
 
             // TODO: add a record of the results of the game to the database
             // ...
-
-            // Reset the player's registry.
-            const playerInfo = this.playerRegistry[usernameInGame];
-            playerInfo.gameId = undefined;
-            playerInfo.active = false;
-            playerInfo.joined = false;
-            playerInfo.queueing = false;
         }
 
-        // Delete any AI users.
         for (const username of users) {
+            // Reset each player's registry.
+            this.resetRegistryData(username);
+
+            // Delete any AI users.
             if (data_access.usernameIsAI(username)) {
                 data_access.clearLocalUserData(username, this);
             }
