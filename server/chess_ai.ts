@@ -72,14 +72,17 @@ export class ChessAIUser {
     /**
      * Use "heuristics" to determine the next move. 
      */
-    async getNextMove(_currBoardDesc: BoardDescription, legalMovesRundown: LegalMovesRundown): Promise<Move> {
+    async getNextMove(_currBoardDesc: BoardDescription, legalMovesRundown: LegalMovesRundown): Promise<Move | null> {
         await utils.sleep(1000 * Math.random() * 10);
 
         const legalMoves = legalMovesRundown[this.ownRole!];
         const chosenPieceCoord = utils.choose(Object.keys(legalMoves));
 
+        if (chosenPieceCoord === null) {
+            return null;
+        }
         const landingCoords = legalMoves[chosenPieceCoord];
-        const chosenLandingCoord = utils.choose(landingCoords);
+        const chosenLandingCoord = utils.choose(landingCoords)!;
 
         const move: Move = { from: chosenPieceCoord, to: chosenLandingCoord, player: this.ownRole! };
         return move;
@@ -91,7 +94,10 @@ export class ChessAIUser {
     async trySendNextMove(gameData: GameViewForClient) {
         if (gameData.turn === this.ownRole) {
             const move = await this.getNextMove(gameData.boardDesc, gameData.legalMovesRundown);
-            this.gameManager.userWantsToPerformMove(this.username, move);
+            
+            if (move !== null) {
+                this.gameManager.userWantsToPerformMove(this.username, move);
+            }
         }
     }
 

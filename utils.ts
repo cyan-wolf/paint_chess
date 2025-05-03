@@ -5,7 +5,10 @@ export function genId(): ID {
     return crypto.randomUUID();
 }
 
-export function choose<T>(array: T[]): T {
+export function choose<T>(array: T[]): T | null {
+    if (array.length === 0) {
+        return null;
+    }
     return array[Math.floor(Math.random() * array.length)];
 }
 
