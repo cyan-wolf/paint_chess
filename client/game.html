@@ -223,8 +223,6 @@
         });
 
         socket.on("move-performed-response", (gameData) => {
-            reloadWindowIfGameAlreadyEnded();
-
             // Updates all the client's state with data from the server.
             updateClientState(gameData);
         });

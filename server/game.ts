@@ -435,7 +435,7 @@ function genRandomColorConfig(): ColorConfig {
     ];
 
     // Pick a random config.
-    return utils.choose(configs);
+    return utils.choose(configs)!;
 }
 
 
