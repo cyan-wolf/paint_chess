@@ -43,7 +43,6 @@ async function connect(client: MongoClient) {
 
 async function connectToHost(client: MongoClient, host: string) {
     // Assert that environment variables are present.
-
     assert(process.env.ATLAS_USERNAME !== undefined);
     assert(process.env.ATLAS_PASSWORD !== undefined);
 
@@ -79,15 +78,13 @@ async function testDBConnection(client: MongoClient) {
     catch (err) {
         console.error(err);
     }
-    finally {
-        // Ensures that the client will close when you finish/error
-        //client.close();
-    }
 }
 
 const appClient = new MongoClient();
 await connect(appClient);
 await testDBConnection(appClient);
 
-const db = appClient.database("paint_chess");
-export default db;
+export function getDB() {
+    const db = appClient.database("paint_chess");
+    return db;
+}

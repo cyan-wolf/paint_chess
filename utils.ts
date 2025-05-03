@@ -1,10 +1,19 @@
 
+/**
+ * Represents an ID used to identify games or temporary users.
+ */
 export type ID = string;
 
+/**
+ * Generates a random ID.
+ */
 export function genId(): ID {
     return crypto.randomUUID();
 }
 
+/**
+ * Choose an element from the given array. Returns `null` if the array is empty.
+ */
 export function choose<T>(array: T[]): T | null {
     if (array.length === 0) {
         return null;
@@ -12,6 +21,8 @@ export function choose<T>(array: T[]): T | null {
     return array[Math.floor(Math.random() * array.length)];
 }
 
+// From:
+// https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep/39914235#39914235
 export function sleep(milisecs: number) {
     return new Promise(resolve => setTimeout(resolve, milisecs));
 }

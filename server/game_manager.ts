@@ -283,13 +283,10 @@ export class GameManager {
         // Set the updated user ratings.
         await data_access.setUserELO(usernameP1, newEloP1);
         await data_access.setUserELO(usernameP2, newEloP2);
-
-        console.log(`LOG: P1 (${newEloP1}), P2 (${newEloP2})`);
     }
 
     // Generate a slice of some of the game queues to send to the client in a nice format.
     async genClientGameQueueSlice(): Promise<QueuedGameClientView[]> {
-        // TODO: randomly shuffle these
         const queuedGameIds = Object.keys(this.queuedGamesDb).slice(0, 10);
 
         const clientViews = [];
@@ -355,9 +352,6 @@ export class GameManager {
         // Auto-join the user to the game.
         this.userWantsToJoinQueuedGame(username, gameId);
 
-        // Update the game queue for all users.
-        // TODO: ...
-        //this.emitGameManagerEventToAll({ kind: "current-game-queue", payload: await this.genClientGameQueueSlice() });
         return gameId;
     }
 
@@ -578,8 +572,6 @@ export class GameManager {
     }
 
     finishGame(gameEndResult: GameEndResult, game: Game) {
-        console.log(`LOG: game ended: ${JSON.stringify(gameEndResult)}`);
-
         const users = game.getUsernames();
 
         // Determine the new ELO of each player, as long 
@@ -608,9 +600,6 @@ export class GameManager {
                 kind: "play-sound",
                 payload: { sound: "game-end" },
             });
-
-            // TODO: add a record of the results of the game to the database
-            // ...
         }
 
         for (const username of users) {

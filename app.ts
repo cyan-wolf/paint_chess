@@ -18,11 +18,14 @@ dotenv.config();
 import { GameManager } from "./server/game_manager.ts"
 
 // For database access.
-import db from "./server/db_conn.ts";
+import { getDB } from "./server/db_conn.ts";
 import { UserSchema } from "./server/types/db_conn_types.d.ts";
 
 // For login management.
 import * as login from "./server/login_management.ts";
+
+// For registration management.
+import * as registrationManagement from "./server/registration_management.ts";
 
 import { fetchUserData } from "./server/data_access.ts";
 
@@ -37,9 +40,6 @@ import { SocketManager } from "./server/socket_manager.ts";
 
 // For user data access.
 import * as data_access from "./server/data_access.ts";
-
-// Utilities.
-import * as utils from "./utils.ts";
 
 const app = express();
 const server = http.createServer(app);
@@ -106,14 +106,17 @@ socketManager.wireSockets();
 
 // Setup routes.
 
+// When the client visits the main page.
 app.get('/', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/index.html"));
 });
 
+// When the client visits the How To Play (About) page.
 app.get('/how-to-play', (_req, res) => {
     res.sendFile(path.join(__dirname, "client/how-to-play.html"));
 });
 
+// When the client visits the registration page.
 app.get('/register', (req, res) => {
     if (req.session.user) {
         // Cannot register if a session already exists.
@@ -124,6 +127,7 @@ app.get('/register', (req, res) => {
     res.sendFile(path.join(__dirname, "client/register.html"));
 });
 
+// When the client visits the login page.
 app.get('/login', (req, res) => {
     if (req.session.user) {
         // Cannot login if a session already exists.
@@ -134,6 +138,7 @@ app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, "client/login.html"));
 });
 
+// When the client visits the logout page.
 app.get('/logout', (req, res) => {
     if (!req.session.user) {
         // There is no session, so logging out doesn't do anything.
@@ -143,52 +148,11 @@ app.get('/logout', (req, res) => {
     res.sendFile(path.join(__dirname, "client/logout.html"));
 });
 
-type RawRegisterRequest = {
-    username?: string,
-    displayname?: string,
-    email?: string,
-    password?: string,
-};
-
-type RegisterRequest = {
-    username: string,
-    displayname: string,
-    email: string,
-    password: string,
-};
-
-function checkRegistration(reqBody: RawRegisterRequest): RegisterRequest | null {
-    if (typeof(reqBody.username) !== 'string' || 
-        typeof(reqBody.displayname) !== 'string' ||
-        typeof(reqBody.password) !== 'string' || 
-        typeof(reqBody.email) !== 'string') {
-        return null;
-    }
-    const { username, displayname, password, email } = reqBody;
-    if (! utils.isValidUsername(username.trim())) {
-        return null;
-    }
-    if (! utils.isValidDisplayName(displayname.trim())) {
-        return null;
-    }
-    if (! utils.isValidPassword(password.trim())) {
-        return null;
-    }
-    if (! utils.isValidEmail(email.trim())) {
-        return null;
-    }
-    return {
-        username: username.trim(),
-        displayname: displayname.trim(),
-        password: password.trim(),
-        email: email.trim(),
-    };
-}
-
+// When the client submits registration credentials.
 app.post('/register', async (req, res) => {
     const reqBody = req.body;
 
-    const registration = checkRegistration(reqBody);
+    const registration = registrationManagement.checkRegistration(reqBody);
 
     if (registration === null) {
         // Invalid registration.
@@ -199,6 +163,7 @@ app.post('/register', async (req, res) => {
     }
     const { username, displayname, email, password: plaintextPassword } = registration;
 
+    const db = getDB();
     const usersCollection = db.collection<UserSchema>("users");
 
     // Disallow registration if a user with the given username already exists.
@@ -220,17 +185,19 @@ app.post('/register', async (req, res) => {
         friends: [],
         elo: 400,
     });
-    console.log(`LOG: registered user ${username}`);
 
     res.render("status/status-successful-registration", { username });
 });
 
+// When the client submits login credentials.
+// The client could be trying to login as a guest user, in which 
+// case a new temporary guest account is created. The client could 
+// also be trying to login with a pre-existing account.
 app.post('/login', async (req, res) => {
     if (req.session.user) {
         // Cannot login if a session already exists.
         return;
     }
-
     const user = await login.tryLoginUser(req.body);
 
     if (user !== null) {
@@ -246,6 +213,7 @@ app.post('/login', async (req, res) => {
     }
 });
 
+// When the client submits a request to logout.
 app.post('/logout', (req, res) => {
     if (!req.session.user) {
         // There is no session, so logging out doesn't do anything.
@@ -261,6 +229,9 @@ app.post('/logout', (req, res) => {
     res.render("status/status-logout", {});
 });
 
+// When the client visits the Find Game page.
+// This is the page where the client can queue a new game or
+// view a list of queued games.
 app.get('/find-game', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
@@ -275,6 +246,7 @@ app.get('/find-game', (req, res) => {
     res.sendFile(path.join(__dirname, "client/find-game.html"));
 });
 
+// When the client visits an invite link to a queued game.
 app.get('/invite/:id', (req, res) => {
     if (!req.session.user) {
         res.redirect('/login');
@@ -307,13 +279,8 @@ app.get('/invite/:id', (req, res) => {
     res.render("invite", { gameId });
 });
 
-// This route is used for queueing games.
-app.post('/find-game', (req, res) => {
-    if (!req.session.user) {
-        res.redirect('/login');
-    }
-});
-
+// API endpoint for getting the current user's data.
+// Used for loading the navbar in the various pages.
 app.get('/current-user-info', async (req, res) => {
     if (!req.session.user) {
         res.send({ userInfo: null });
@@ -325,6 +292,8 @@ app.get('/current-user-info', async (req, res) => {
     res.send({ userInfo });
 });
 
+// When the client visits a user's profile page.
+// All users, even guests and AI accounts, have profile pages.
 app.get('/profile/:username', async (req, res) => {
     const username = req.params.username;
     
@@ -334,20 +303,19 @@ app.get('/profile/:username', async (req, res) => {
         res.render("status/status-unknown-user", { username });
         return;
     }
-
-    // TODO: Allow users (with accounts) to customize this.
     const description = (userInfo.isTemp) ? "This is a temporary account." : "This is a user account.";
 
-    // TODO: Add more data to this, like ELO history.
     const profileInfo = { 
         description,
         ...userInfo,
     };
-    
-    // Use server-side rendering or similar to generate a profile page with the above info.
     res.render("profile", profileInfo);
 });
 
+// When the client visits an active game page.
+// Clients under normal circumstances do not visit this page directly, instead:
+// 1) They are taken to this page automatically when a game is found in the Find Game page. 
+// 2) Invite links also redirect to this page. 
 app.get("/game/:id", (req, res) => {
     const gameId = req.params.id;
 
@@ -377,5 +345,5 @@ app.get("/game/:id", (req, res) => {
 const port = process.env.PORT || 3000;
 
 server.listen(port, () => {
-    console.log(`App running at http://localhost:${port}.`);
+    console.log(`App running at port ${port}.`);
 });

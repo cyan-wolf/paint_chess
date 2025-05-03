@@ -97,7 +97,7 @@ export class Board {
 
         // Verify if the other player is in check (for alerting the players of the check).
         const otherPlayerChecked = inCheck(this.gridData, this.turn);
-        const otherPlayerMoveless = outOfLegalMoves(this.gridData, this.turn, currLegalBoardRundown);
+        const otherPlayerMoveless = outOfLegalMoves(this.turn, currLegalBoardRundown);
 
         if (otherPlayerChecked && otherPlayerMoveless) {
             const winningPlayer = Game.togglePlayerRole(this.turn);
@@ -277,7 +277,6 @@ function performVirtualMove(move: Move, turn: PlayerRole, gridData: GridData): b
             return false;
         }
     }
-
     // Look for check.
     if (inCheck(gridData, turn)) {
         return false;
@@ -458,8 +457,6 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingDestPos = [rookRow, fromPos[1] - 2];
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol + 3];
-
-        //gridData.castlingData[player].leftRookMoved = true;
     }
     else if (rookCol === 7) {
         if (gridData.castlingData[player].rightRookMoved) {
@@ -468,8 +465,6 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
         kingDestPos = [rookRow, fromPos[1] + 2];
         kingPath = getInBetweenPositions(fromPos, kingDestPos);
         rookEndPos = [rookRow, rookCol - 2];
-
-        //gridData.castlingData[player].rightRookMoved = true;
     }
     else {
         // Unreachable (?).
@@ -521,7 +516,6 @@ function performCastling(gridData: GridData, fromPos: Pos, toPos: Pos): boolean 
     // The path is empty since there is no way to observe the king's 
     // path in a normal game when castling.
     movePiece(gridData, fromPos, kingDestPos, []);
-    //gridData.castlingData[player].kingHasMoved = true;
 
     // Delete the old slot's king.
     const emptySlot = newEmptySlot();
@@ -903,7 +897,7 @@ function genLegalMovesRundown(gridData: GridData, onlyForPlayer?: PlayerRole): L
 
 // Determines whether the given player can perform any moves without being in check.
 // If there are no legal moves, then there is a stalemate.
-function outOfLegalMoves(gridData: GridData, player: PlayerRole, legalMovesRundown: LegalMovesRundown): boolean {
+function outOfLegalMoves(player: PlayerRole, legalMovesRundown: LegalMovesRundown): boolean {
     for (const coord of Object.keys(legalMovesRundown[player])) {
         const moveAmt = legalMovesRundown[player][coord].length;
 
@@ -1037,93 +1031,5 @@ function genInitialChessBoardDesc(): BoardDescription {
         };
     }
 
-    return boardDesc;
-}
-
-function genTestBoardDesc(): BoardDescription {
-    const boardDesc: BoardDescription = {
-        // First player's side.
-        "a1": {
-            piece: "rook",
-            player: "p1",
-            turf: "p1",
-        },
-        // "b1": {
-        //     piece: "knight",
-        //     player: "p1",
-        //     turf: "p1",
-        // },
-        // "c1": {
-        //     piece: "bishop",
-        //     player: "p1",
-        //     turf: "p1",
-        // },
-        "d1": {
-            piece: "queen",
-            player: "p1",
-            turf: "p1",
-        },
-        "e1": {
-            piece: "king",
-            player: "p1",
-            turf: "p1",
-        },
-        // "f1": {
-        //     piece: "bishop",
-        //     player: "p1",
-        //     turf: "p1",
-        // },
-        // "g1": {
-        //     piece: "knight",
-        //     player: "p1",
-        //     turf: "p1",
-        // },
-        "h1": {
-            piece: "rook",
-            player: "p1",
-            turf: "p1",
-        },
-        // Second player's side.
-        // "a8": {
-        //     piece: "rook",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        // "b8": {
-        //     piece: "knight",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        // "c8": {
-        //     piece: "bishop",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        // "d8": {
-        //     piece: "queen",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        "e8": {
-            piece: "king",
-            player: "p2",
-            turf: "p2",
-        },
-        // "f8": {
-        //     piece: "bishop",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        // "g8": {
-        //     piece: "knight",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-        // "h8": {
-        //     piece: "rook",
-        //     player: "p2",
-        //     turf: "p2",
-        // },
-    };
     return boardDesc;
 }

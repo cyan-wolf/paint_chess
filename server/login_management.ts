@@ -1,5 +1,5 @@
 // For database access.
-import db from "./db_conn.ts";
+import { getDB } from "./db_conn.ts";
 import { UserSchema } from "./types/db_conn_types.d.ts";
 
 // For hashing passwords.
@@ -10,6 +10,7 @@ import { isValidDisplayName } from "../utils.ts";
 
 // Validates the given login credentials.
 async function validateLoginCredentials(username: string, plaintextPassword: string): Promise<boolean> {
+    const db = getDB();
     const userCollection = db.collection<UserSchema>("users");
 
     // Usernames are unique.
@@ -28,7 +29,6 @@ type RawLoginRequest =
     | { type?: "account", username?: string, password?: string }
     | { type?: "guest", displayname?: string };
 
-// TODO: this is a duplicated type definition
 type User = {
     username: string
 };

@@ -31,18 +31,14 @@ export class SocketManager {
             });
             
             // When the client wants to queue a new game.
-            socket.on("queue-game", async ({ gameSettings }) => {
+            socket.on("queue-game", ({ gameSettings }) => {
                 const gameId = this.gameManager.userWantsQueueNewGame(username, gameSettings);
 
                 // This is for sending the game ID to the `/find-game` page.
                 if (gameId !== null) {
                     this.io.to(socket.id).emit("game-queue-success-response", { gameId });
                 }
-
-                const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
-
-                // Send the updated game queue to all sockets.
-                this.io.emit("current-game-queue", gameQueueClientView);
+                this.sendUpdatedGameQeueueToAllSockets();
             });
 
             // This is for sending the game ID to the `/find-game` page.
@@ -60,12 +56,10 @@ export class SocketManager {
             });
 
             // When the client wants to join a game with the given ID.
-            socket.on("join-game-request", async ({ gameId }) => {
+            socket.on("join-game-request", ({ gameId }) => {
                 this.gameManager.userWantsToJoinQueuedGame(username, gameId);
                 
-                // Updates the game queue for all sockets.
-                const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
-                this.io.emit("current-game-queue", gameQueueClientView);
+                this.sendUpdatedGameQeueueToAllSockets();
             });
 
             socket.on("ready-to-start-game", () => {
@@ -88,5 +82,11 @@ export class SocketManager {
                 this.gameManager.userWantsToResign(username);
             });
         });
+    }
+
+    // Send the updated game queue to all sockets.
+    async sendUpdatedGameQeueueToAllSockets() {
+        const gameQueueClientView = await this.gameManager.genClientGameQueueSlice();
+        this.io.emit("current-game-queue", gameQueueClientView);
     }
 }

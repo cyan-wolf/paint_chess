@@ -1,4 +1,4 @@
-import db from "./db_conn.ts";
+import { getDB } from "./db_conn.ts";
 import { TemporaryUserDb, PublicUserData, TemporaryUserInfo, UserSchema } from "./types/db_conn_types.d.ts";
 
 import * as utils from "../utils.ts";
@@ -80,6 +80,7 @@ async function fetchUserData(username: string, roundElo?: boolean): Promise<Publ
         return userData;
     }
 
+    const db = getDB();
     const usersCollection = db.collection<UserSchema>("users");
     const user = await usersCollection.findOne({ username });
 
@@ -105,7 +106,9 @@ async function setUserELO(username: string, newElo: number) {
         temporaryUsersLocalDb[username].elo = newElo;
     }
     else {
+        const db = getDB();
         const usersCollection = db.collection<UserSchema>("users");
+
         await usersCollection.updateOne(
             { username }, 
             { 
