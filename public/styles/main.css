@@ -59,6 +59,11 @@ body {
     margin-bottom: 20px;
 }
 
+.login-section label {
+    display: block;
+    margin-bottom: 0.5em;
+}
+
 .btn-login {
     color: white;
     font-size: 20px;
