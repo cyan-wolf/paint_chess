@@ -14,6 +14,9 @@ type RegisterRequest = {
     password: string,
 };
 
+/**
+ * Validates a registration request.
+ */
 export function checkRegistration(reqBody: RawRegisterRequest): RegisterRequest | null {
     if (typeof(reqBody.username) !== 'string' || 
         typeof(reqBody.displayname) !== 'string' ||

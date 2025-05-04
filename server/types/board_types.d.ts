@@ -26,6 +26,9 @@ type Piece =
     | "queen"
     | "king";
 
+/**
+ * A union of the possible pieces a pawn can promote into.
+ */
 type PromotionPiece = 
     | "knight"
     | "bishop"
@@ -44,21 +47,30 @@ type Slot = {
     turf: PlayerRole | null
 };
 
-// TODO: Remove the need to use this. The only reason this is used 
-// is because of the way the client-side API works.
-// This should be replaced with `Slot`.
+/**
+ * Represents a "description" of a slot sent by the client.
+ */
 type SlotDescription = {
     piece?: Piece,
     player?: PlayerRole,
     turf?: PlayerRole,
 };
 
+/**
+ * Represents a 2D grid of slots.
+ */
 type Grid = Slot[][];
 
+/**
+ * Used for caching the coordinates of the player's kings.
+ */
 type KingCoords = {
     [player in PlayerRole]: Coord
 };
 
+/**
+ * Used for caching the associated bookeeping needed for castling.
+ */
 type CastlingData = {
     [player in PlayerRole]: {
         kingHasMoved: boolean,
@@ -67,6 +79,10 @@ type CastlingData = {
     }
 };
 
+/**
+ * Represents a grid along with additional bookeeping needed for a 
+ * game to work.
+ */
 type GridData = {
     grid: Grid,
     kingCoords: KingCoords,
@@ -90,6 +106,9 @@ type Move = {
     promotion?: PromotionPiece,
 };
 
+/**
+ * Maps each player's pieces to the set of all coordinates attacked by that piece.
+ */
 type BoardRundown = {
     [player in PlayerRole]: {
         [coord: Coord]: {
@@ -98,6 +117,9 @@ type BoardRundown = {
     }
 };
 
+/**
+ * Maps each player's pieces to a list of the piece's legal moves.
+ */
 type LegalMovesRundown = {
     [player in PlayerRole]: {
         [coord: Coord]: Coord[],
@@ -111,6 +133,9 @@ type CheckStatus =
     | { who: PlayerRole, kingCoord: Coord } 
     | null;
 
+/**
+ * Represents an event emitted by the board.
+ */
 type BoardEvent = 
     | { kind: "stalemate" }
     | { kind: "checkmate", by: PlayerRole };
