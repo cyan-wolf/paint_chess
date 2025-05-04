@@ -28,6 +28,10 @@
     --variant-color: rgb(0, 238, 255);
 }
 
+.how-to-play-content>:nth-child(7) {
+    --variant-color: rgb(188, 129, 255);
+}
+
 .how-to-play-content div {
     padding: 1em;
 }
