@@ -161,7 +161,7 @@ app.post('/register', async (req, res) => {
         res.redirect("/");
         return;
     }
-    const { username, displayname, email, password: plaintextPassword } = registration;
+    const { username, displayname, password: plaintextPassword } = registration;
 
     const db = getDB();
     const usersCollection = db.collection<UserSchema>("users");
@@ -180,9 +180,7 @@ app.post('/register', async (req, res) => {
     await usersCollection.insertOne({
         username,
         displayname,
-        email,
         password,
-        friends: [],
         elo: 400,
     });
 

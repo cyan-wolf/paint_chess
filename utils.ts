@@ -66,10 +66,3 @@ export function isValidPassword(password: string): boolean {
     return password.length >= 8 &&
         password.length <= 40;
 }
-
-/**
- * An email must between 4 and 40 characters long and must contain an `@` sign.
- */
-export function isValidEmail(email: string): boolean {
-    return email.length > 3 && email.length < 40 && /@/.test(email);
-}
