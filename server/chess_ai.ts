@@ -105,7 +105,7 @@ export class ChessAIUser {
      * Try to generate and send a random chat response.
      */
     tryGenerateRandomChatResponse() {
-        const respondChance = 0.05;
+        const respondChance = 0.025;
         if (Math.random() > respondChance) {
             return;
         }
