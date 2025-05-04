@@ -180,6 +180,10 @@ app.post('/register', async (req, res) => {
         elo: 400,
     });
 
+    // Initialize a user session.
+    req.session.user = { username };
+
+    // Show successful registration status page.
     res.render("status/status-successful-registration", { username });
 });
 
