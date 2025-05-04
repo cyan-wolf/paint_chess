@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="/public/images/favicon/favicon.svg" type="image/x-icon">
+    <link rel="stylesheet" href="/public/styles/main.css">
+    <link rel="stylesheet" href="/public/styles/nav.css">
+    <link rel="stylesheet" href="/public/styles/status.css">
+    <title>Invalid Registration | Paint Chess</title>
+</head>
+<body>
+    <nav id="nav" class="nav">
+        <!-- Generated using JavaScript. -->
+    </nav>
+
+    <div class="status-card">
+        <h1>Invalid Registration</h1>
+        <p>
+            Username '{{username}}' is already being used.
+            Click <a href="/register">here</a> to try again.
+        </p>
+    </div>
+
+    <!-- For filling in the nav bar. -->
+    <script src="/public/scripts/navbar.js"></script>
+
+    <script>
+        window.addEventListener("load", async () => {
+            await initNav();
+        });
+    </script>
+</body>
+</html>

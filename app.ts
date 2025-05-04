@@ -156,8 +156,6 @@ app.post('/register', async (req, res) => {
 
     if (registration === null) {
         // Invalid registration.
-        console.log("invalid registration");
-
         res.redirect("/");
         return;
     }
@@ -168,9 +166,7 @@ app.post('/register', async (req, res) => {
 
     // Disallow registration if a user with the given username already exists.
     if ((await usersCollection.findOne({ username })) !== undefined) {
-        console.log("invalid registration");
-
-        res.redirect("/");
+        res.render("status/status-invalid-registration-username-already-used", { username });
         return;
     }
 
@@ -194,6 +190,7 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
     if (req.session.user) {
         // Cannot login if a session already exists.
+        res.redirect('/');
         return;
     }
     const user = await login.tryLoginUser(req.body);
@@ -205,9 +202,11 @@ app.post('/login', async (req, res) => {
         // This is set by middleware.
         res.redirect(req.session.redirectTo ?? '/');
         delete req.session.redirectTo;
+        return;
     }
     else {
-        res.redirect('/login');
+        res.render("status/status-invalid-login-credentials");
+        return;
     }
 });
 
